@@ -1,0 +1,13 @@
+# Abaikan direktori dan file yang tidak perlu diupload ke GitHub
+
+# Node.js dependencies
+node_modules/
+
+# Vercel config dan cache
+.vercel/
+
+# WhatsApp Web JS auth dan cache
+.wwebjs_auth/
+.wwebjs_cache/
+
+# File/Folder tambahan lain yang ingin diabaikan bisa ditambah di bawah ini
