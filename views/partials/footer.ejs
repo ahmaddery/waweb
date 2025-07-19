@@ -1,0 +1,63 @@
+</main>
+      
+      <!-- Footer -->
+      <footer class="footer mt-auto py-3 bg-light">
+        <div class="container-fluid">
+          <div class="row">
+            <div class="col-md-6">
+              <span class="text-muted">WhatsApp Web API &copy; <%= new Date().getFullYear() %></span>
+            </div>
+            <div class="col-md-6 text-md-end">
+              <span class="text-muted">Version 1.0.0</span>
+            </div>
+          </div>
+        </div>
+      </footer>
+    </div>
+  </div>
+  
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Toggle sidebar
+      document.getElementById('sidebarCollapse').addEventListener('click', function() {
+        document.querySelector('.sidebar').classList.toggle('active');
+        document.querySelector('.content').classList.toggle('active');
+      });
+      
+      // Handle logout
+      const logoutBtn = document.getElementById('logout-btn');
+      if (logoutBtn) {
+        logoutBtn.addEventListener('click', async function(e) {
+          e.preventDefault();
+          
+          try {
+            const response = await fetch('/api/auth/logout', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              }
+            });
+            
+            if (response.ok) {
+              window.location.href = '/login';
+            } else {
+              console.error('Logout failed');
+            }
+          } catch (error) {
+            console.error('Error during logout:', error);
+          }
+        });
+      }
+      
+      // Auto-hide alerts after 5 seconds
+      const alerts = document.querySelectorAll('.alert:not(.alert-permanent)');
+      alerts.forEach(function(alert) {
+        setTimeout(function() {
+          const bsAlert = new bootstrap.Alert(alert);
+          bsAlert.close();
+        }, 5000);
+      });
+    });
+  </script>
+</body>
+</html>

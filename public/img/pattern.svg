@@ -1,0 +1,57 @@
+<svg width="100" height="100" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse">
+      <path d="M 10 0 L 0 0 0 10" fill="none" stroke="white" stroke-width="0.5" opacity="0.3"/>
+    </pattern>
+  </defs>
+  <rect width="100" height="100" fill="url(#grid)" />
+  
+  <!-- Circles -->
+  <circle cx="25" cy="25" r="3" fill="white" opacity="0.2" />
+  <circle cx="75" cy="75" r="3" fill="white" opacity="0.2" />
+  <circle cx="75" cy="25" r="2" fill="white" opacity="0.2" />
+  <circle cx="25" cy="75" r="2" fill="white" opacity="0.2" />
+  
+  <!-- Dots -->
+  <circle cx="10" cy="10" r="1" fill="white" opacity="0.3" />
+  <circle cx="20" cy="10" r="1" fill="white" opacity="0.3" />
+  <circle cx="30" cy="10" r="1" fill="white" opacity="0.3" />
+  <circle cx="40" cy="10" r="1" fill="white" opacity="0.3" />
+  <circle cx="50" cy="10" r="1" fill="white" opacity="0.3" />
+  <circle cx="60" cy="10" r="1" fill="white" opacity="0.3" />
+  <circle cx="70" cy="10" r="1" fill="white" opacity="0.3" />
+  <circle cx="80" cy="10" r="1" fill="white" opacity="0.3" />
+  <circle cx="90" cy="10" r="1" fill="white" opacity="0.3" />
+  
+  <circle cx="10" cy="90" r="1" fill="white" opacity="0.3" />
+  <circle cx="20" cy="90" r="1" fill="white" opacity="0.3" />
+  <circle cx="30" cy="90" r="1" fill="white" opacity="0.3" />
+  <circle cx="40" cy="90" r="1" fill="white" opacity="0.3" />
+  <circle cx="50" cy="90" r="1" fill="white" opacity="0.3" />
+  <circle cx="60" cy="90" r="1" fill="white" opacity="0.3" />
+  <circle cx="70" cy="90" r="1" fill="white" opacity="0.3" />
+  <circle cx="80" cy="90" r="1" fill="white" opacity="0.3" />
+  <circle cx="90" cy="90" r="1" fill="white" opacity="0.3" />
+  
+  <circle cx="10" cy="20" r="1" fill="white" opacity="0.3" />
+  <circle cx="10" cy="30" r="1" fill="white" opacity="0.3" />
+  <circle cx="10" cy="40" r="1" fill="white" opacity="0.3" />
+  <circle cx="10" cy="50" r="1" fill="white" opacity="0.3" />
+  <circle cx="10" cy="60" r="1" fill="white" opacity="0.3" />
+  <circle cx="10" cy="70" r="1" fill="white" opacity="0.3" />
+  <circle cx="10" cy="80" r="1" fill="white" opacity="0.3" />
+  
+  <circle cx="90" cy="20" r="1" fill="white" opacity="0.3" />
+  <circle cx="90" cy="30" r="1" fill="white" opacity="0.3" />
+  <circle cx="90" cy="40" r="1" fill="white" opacity="0.3" />
+  <circle cx="90" cy="50" r="1" fill="white" opacity="0.3" />
+  <circle cx="90" cy="60" r="1" fill="white" opacity="0.3" />
+  <circle cx="90" cy="70" r="1" fill="white" opacity="0.3" />
+  <circle cx="90" cy="80" r="1" fill="white" opacity="0.3" />
+  
+  <!-- Diagonal Lines -->
+  <line x1="0" y1="0" x2="30" y2="30" stroke="white" stroke-width="0.5" opacity="0.2" />
+  <line x1="70" y1="70" x2="100" y2="100" stroke="white" stroke-width="0.5" opacity="0.2" />
+  <line x1="0" y1="100" x2="30" y2="70" stroke="white" stroke-width="0.5" opacity="0.2" />
+  <line x1="70" y1="30" x2="100" y2="0" stroke="white" stroke-width="0.5" opacity="0.2" />
+</svg>

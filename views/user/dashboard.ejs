@@ -1,0 +1,441 @@
+<%- include('../partials/header', { title: title }) %>
+
+<div class="row">
+  <div class="col-12">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h1 class="h3">User Dashboard</h1>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <!-- WhatsApp Connection Card -->
+  <div class="col-md-6 mb-4">
+    <div class="card h-100">
+      <div class="card-header">
+        <h5 class="card-title mb-0">WhatsApp Connection</h5>
+      </div>
+      <div class="card-body">
+        <div class="text-center mb-4" id="qrcode-container">
+          <div id="qrcode"></div>
+          <p class="text-muted mt-2" id="qr-instructions" style="display: none;">
+            Scan this QR code with your WhatsApp to connect
+          </p>
+        </div>
+        
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <span>Status:</span>
+          <span id="connection-status" class="badge bg-secondary">Disconnected</span>
+        </div>
+        
+        <div class="d-grid gap-2">
+          <button id="start-session-btn" class="btn btn-primary">
+            Start Session
+          </button>
+          <button id="delete-session-btn" class="btn btn-danger">
+            Delete Session
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Sessions Overview Card -->
+  <div class="col-md-6 mb-4">
+    <div class="card h-100">
+      <div class="card-header">
+        <h5 class="card-title mb-0">Your Sessions</h5>
+      </div>
+      <div class="card-body">
+        <% if (sessions && sessions.length > 0) { %>
+          <div class="table-responsive">
+            <table class="table table-hover">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Status</th>
+                  <th>Created</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% sessions.forEach(session => { %>
+                  <tr>
+                    <td><%= session.session_name %></td>
+                    <td>
+                      <% if (session.is_active) { %>
+                        <span class="badge bg-success">Active</span>
+                      <% } else { %>
+                        <span class="badge bg-secondary">Inactive</span>
+                      <% } %>
+                    </td>
+                    <td><%= new Date(session.created_at).toLocaleString() %></td>
+                    <td>
+                      <a href="/user/messages/<%= session.id %>" class="btn btn-sm btn-info">
+                        <i class="bi bi-chat-dots"></i>
+                      </a>
+                    </td>
+                  </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
+        <% } else { %>
+          <div class="text-center py-4">
+            <p class="text-muted">No sessions found. Start a new session to begin.</p>
+          </div>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Webhook Configuration Card -->
+<div class="row">
+  <div class="col-12 mb-4">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="card-title mb-0">Webhook Configuration</h5>
+      </div>
+      <div class="card-body">
+        <form id="webhook-form">
+          <div class="mb-3">
+            <label for="webhook-url" class="form-label">Webhook URL</label>
+            <input type="url" class="form-control" id="webhook-url" placeholder="https://your-webhook-url.com/api/webhook">
+            <div class="form-text">We'll send all incoming messages to this URL.</div>
+          </div>
+          <button type="submit" class="btn btn-primary" id="save-webhook-btn">Save Webhook</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Session Name Modal -->
+<div class="modal fade" id="session-name-modal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Start New Session</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form id="session-name-form">
+          <div class="mb-3">
+            <label for="session-name" class="form-label">Session Name</label>
+            <input type="text" class="form-control" id="session-name" required>
+            <div class="form-text">Give your session a descriptive name.</div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-primary" id="confirm-session-btn">Start Session</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.0/build/qrcode.min.js"></script>
+<script src="/socket.io/socket.io.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Socket.io connection
+    const socket = io();
+    
+    // Elements
+    const qrcodeContainer = document.getElementById('qrcode-container');
+    const qrcodeElement = document.getElementById('qrcode');
+    const qrInstructions = document.getElementById('qr-instructions');
+    const connectionStatus = document.getElementById('connection-status');
+    const startSessionBtn = document.getElementById('start-session-btn');
+    const deleteSessionBtn = document.getElementById('delete-session-btn');
+    const webhookForm = document.getElementById('webhook-form');
+    const webhookUrlInput = document.getElementById('webhook-url');
+    const saveWebhookBtn = document.getElementById('save-webhook-btn');
+    
+    // Session name modal elements
+    const sessionNameModal = new bootstrap.Modal(document.getElementById('session-name-modal'));
+    const sessionNameInput = document.getElementById('session-name');
+    const confirmSessionBtn = document.getElementById('confirm-session-btn');
+    
+    // Load webhook URL
+    fetch('/api/webhook')
+      .then(response => response.json())
+      .then(data => {
+        if (data.url) {
+          webhookUrlInput.value = data.url;
+        }
+      })
+      .catch(error => console.error('Error loading webhook URL:', error));
+    
+    // Update status function
+    function updateStatus(status) {
+      connectionStatus.textContent = status;
+      
+      if (status === 'Connected') {
+        connectionStatus.className = 'badge bg-success';
+        startSessionBtn.disabled = true;
+        startSessionBtn.innerHTML = 'WhatsApp Connected';
+        qrcodeContainer.innerHTML = '<div class="alert alert-success">WhatsApp is connected!</div>';
+      } else if (status === 'Disconnected') {
+        connectionStatus.className = 'badge bg-secondary';
+        startSessionBtn.disabled = false;
+        startSessionBtn.innerHTML = 'Start Session';
+      }
+    }
+    
+    // Socket.io event listeners
+    socket.on('qr', (data) => {
+      // Check if this QR code is for our current session
+      if (window.currentSessionId && data.sessionId === window.currentSessionId) {
+        // Clear previous QR code
+        qrcodeElement.innerHTML = '';
+        qrInstructions.style.display = 'block';
+        
+        // Display QR code directly from server endpoint
+        const img = document.createElement('img');
+        img.src = `/api/whatsapp/session/${data.sessionId}/qr?t=${Date.now()}`;
+        img.style.maxWidth = '100%';
+        img.style.height = 'auto';
+        img.alt = 'WhatsApp QR Code';
+        
+        // Handle image load error
+        img.onerror = function() {
+          console.error('Error loading QR code image from server');
+          qrcodeElement.innerHTML = '<p class="text-danger">Error loading QR code. Please try again.</p>';
+        };
+        
+        // Handle image load success
+        img.onload = function() {
+          console.log('QR code image loaded successfully from server');
+        };
+        
+        qrcodeElement.appendChild(img);
+        
+        updateStatus('Pending');
+        connectionStatus.className = 'badge bg-warning';
+      }
+    });
+    
+    socket.on('ready', (data) => {
+      // Check if this event is for our current session
+      if (window.currentSessionId && data.sessionId === window.currentSessionId) {
+        updateStatus('Connected');
+        showSuccess('WhatsApp client is connected!');
+        
+        // Hide QR code and show success message
+        qrcodeElement.innerHTML = '<div class="text-center"><i class="bi bi-check-circle-fill text-success" style="font-size: 4rem;"></i><p class="mt-3">WhatsApp connected successfully!</p></div>';
+        
+        // Reload page after a short delay to show updated session status
+        setTimeout(() => {
+          window.location.reload();
+        }, 3000);
+      }
+    });
+    
+    socket.on('disconnected', (data) => {
+      // Check if this event is for our current session
+      if (window.currentSessionId && data.sessionId === window.currentSessionId) {
+        updateStatus('Disconnected');
+        showError('WhatsApp client disconnected');
+      }
+    });
+    
+    socket.on('status', (data) => {
+      updateStatus(data.status);
+    });
+    
+    // Start session button
+    startSessionBtn.addEventListener('click', () => {
+      sessionNameModal.show();
+    });
+    
+    // Confirm session button
+    confirmSessionBtn.addEventListener('click', async () => {
+      const sessionName = sessionNameInput.value.trim();
+      
+      if (!sessionName) {
+        showError('Session name is required');
+        return;
+      }
+      
+      try {
+        startSessionBtn.disabled = true;
+        startSessionBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Starting...';
+        
+        // First create the session
+        const createResponse = await fetch('/api/sessions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ name: sessionName })
+        });
+        
+        const createData = await createResponse.json();
+        
+        if (!createResponse.ok) {
+          throw new Error(createData.message || 'Failed to create session');
+        }
+        
+        // Then start the WhatsApp session
+        const response = await fetch(`/api/sessions/${createData.sessionId}/start`, {
+          method: 'POST'
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+          // Store the session ID for socket events
+          window.currentSessionId = createData.sessionId;
+          
+          sessionNameModal.hide();
+          showSuccess('Session started successfully! Waiting for QR code...');
+          
+          // Show loading in QR container
+          qrcodeElement.innerHTML = '<div class="text-center"><div class="spinner-border" role="status"><span class="visually-hidden">Loading...</span></div><p class="mt-2">Generating QR code...</p></div>';
+          qrInstructions.style.display = 'block';
+        } else {
+          showError(data.message || 'Failed to start session');
+          startSessionBtn.disabled = false;
+          startSessionBtn.textContent = 'Start Session';
+        }
+      } catch (error) {
+        console.error('Error starting session:', error);
+        showError('An error occurred while starting the session');
+        startSessionBtn.disabled = false;
+        startSessionBtn.textContent = 'Start Session';
+      }
+    });
+    
+    // Delete session button
+    deleteSessionBtn.addEventListener('click', async () => {
+      if (!confirm('Are you sure you want to delete this session? This will log you out of WhatsApp.')) {
+        return;
+      }
+      
+      try {
+        deleteSessionBtn.disabled = true;
+        deleteSessionBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Deleting...';
+        
+        const response = await fetch('/api/session/delete', {
+          method: 'POST'
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+          showSuccess(data.message);
+          updateStatus('Disconnected');
+          
+          // Clear QR code container
+          qrcodeElement.innerHTML = '';
+          qrInstructions.style.display = 'none';
+          
+          // Reload page after a short delay
+          setTimeout(() => {
+            window.location.reload();
+          }, 2000);
+        } else {
+          showError(data.message || 'Failed to delete session');
+        }
+      } catch (error) {
+        console.error('Error deleting session:', error);
+        showError('An error occurred while deleting the session');
+      } finally {
+        deleteSessionBtn.disabled = false;
+        deleteSessionBtn.textContent = 'Delete Session';
+      }
+    });
+    
+    // Webhook form
+    webhookForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const webhookUrl = webhookUrlInput.value.trim();
+      
+      try {
+        saveWebhookBtn.disabled = true;
+        saveWebhookBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Saving...';
+        
+        const response = await fetch('/api/webhook', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ url: webhookUrl })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+          showSuccess(data.message);
+        } else {
+          showError(data.message || 'Failed to save webhook URL');
+        }
+      } catch (error) {
+        console.error('Error saving webhook URL:', error);
+        showError('An error occurred while saving the webhook URL');
+      } finally {
+        saveWebhookBtn.disabled = false;
+        saveWebhookBtn.textContent = 'Save Webhook';
+      }
+    });
+    
+    // Helper functions for showing messages
+    function showSuccess(message, element) {
+      const toast = document.createElement('div');
+      toast.className = 'toast align-items-center text-white bg-success border-0';
+      toast.setAttribute('role', 'alert');
+      toast.setAttribute('aria-live', 'assertive');
+      toast.setAttribute('aria-atomic', 'true');
+      
+      toast.innerHTML = `
+        <div class="d-flex">
+          <div class="toast-body">
+            ${message}
+          </div>
+          <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+      `;
+      
+      document.body.appendChild(toast);
+      const bsToast = new bootstrap.Toast(toast, { delay: 5000 });
+      bsToast.show();
+      
+      // Remove the element when hidden
+      toast.addEventListener('hidden.bs.toast', function () {
+        document.body.removeChild(toast);
+      });
+    }
+    
+    function showError(message, element) {
+      const toast = document.createElement('div');
+      toast.className = 'toast align-items-center text-white bg-danger border-0';
+      toast.setAttribute('role', 'alert');
+      toast.setAttribute('aria-live', 'assertive');
+      toast.setAttribute('aria-atomic', 'true');
+      
+      toast.innerHTML = `
+        <div class="d-flex">
+          <div class="toast-body">
+            ${message}
+          </div>
+          <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+      `;
+      
+      document.body.appendChild(toast);
+      const bsToast = new bootstrap.Toast(toast, { delay: 5000 });
+      bsToast.show();
+      
+      // Remove the element when hidden
+      toast.addEventListener('hidden.bs.toast', function () {
+        document.body.removeChild(toast);
+      });
+    }
+  });
+</script>
+
+<%- include('../partials/footer') %>

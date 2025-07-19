@@ -1,0 +1,647 @@
+<%- include('../partials/header', { title: title }) %>
+
+<div class="row">
+  <div class="col-12">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h1 class="h3">System Settings</h1>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <!-- General Settings -->
+  <div class="col-md-6 mb-4">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="card-title mb-0">General Settings</h5>
+      </div>
+      <div class="card-body">
+        <form id="general-settings-form">
+          <div class="mb-3">
+            <label for="site-name" class="form-label">Site Name</label>
+            <input type="text" class="form-control" id="site-name" value="<%= settings.siteName || 'WhatsApp Web API' %>">
+          </div>
+          
+          <div class="mb-3">
+            <label for="session-timeout" class="form-label">Session Timeout (minutes)</label>
+            <input type="number" class="form-control" id="session-timeout" value="<%= settings.sessionTimeout || 60 %>">
+            <div class="form-text">How long until user sessions expire due to inactivity</div>
+          </div>
+          
+          <div class="mb-3">
+            <label for="max-sessions-per-user" class="form-label">Max Sessions Per User</label>
+            <input type="number" class="form-control" id="max-sessions-per-user" value="<%= settings.maxSessionsPerUser || 5 %>">
+            <div class="form-text">Maximum number of WhatsApp sessions a regular user can create</div>
+          </div>
+          
+          <div class="mb-3 form-check">
+            <input type="checkbox" class="form-check-input" id="allow-registration" <%= settings.allowRegistration ? 'checked' : '' %>>
+            <label class="form-check-label" for="allow-registration">Allow Public Registration</label>
+            <div class="form-text">If disabled, only admins can create new user accounts</div>
+          </div>
+          
+          <button type="submit" class="btn btn-primary" id="save-general-settings-btn">Save General Settings</button>
+        </form>
+      </div>
+    </div>
+  </div>
+  
+  <!-- WhatsApp Settings -->
+  <div class="col-md-6 mb-4">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="card-title mb-0">WhatsApp Settings</h5>
+      </div>
+      <div class="card-body">
+        <form id="whatsapp-settings-form">
+          <div class="mb-3">
+            <label for="default-webhook-url" class="form-label">Default Webhook URL</label>
+            <input type="url" class="form-control" id="default-webhook-url" value="<%= settings.defaultWebhookUrl || '' %>" placeholder="https://your-webhook-url.com/api/webhook">
+            <div class="form-text">Default webhook URL for new WhatsApp sessions (optional)</div>
+          </div>
+          
+          <div class="mb-3">
+            <label for="qr-refresh-interval" class="form-label">QR Code Refresh Interval (seconds)</label>
+            <input type="number" class="form-control" id="qr-refresh-interval" value="<%= settings.qrRefreshInterval || 30 %>">
+            <div class="form-text">How often to refresh QR codes during session initialization</div>
+          </div>
+          
+          <div class="mb-3">
+            <label for="session-data-path" class="form-label">Session Data Path</label>
+            <input type="text" class="form-control" id="session-data-path" value="<%= settings.sessionDataPath || './sessions' %>">
+            <div class="form-text">Directory where WhatsApp session data is stored</div>
+          </div>
+          
+          <div class="mb-3 form-check">
+            <input type="checkbox" class="form-check-input" id="keep-alive-on-disconnect" <%= settings.keepAliveOnDisconnect ? 'checked' : '' %>>
+            <label class="form-check-label" for="keep-alive-on-disconnect">Keep Sessions Alive on Disconnect</label>
+            <div class="form-text">Attempt to reconnect WhatsApp sessions automatically when disconnected</div>
+          </div>
+          
+          <button type="submit" class="btn btn-primary" id="save-whatsapp-settings-btn">Save WhatsApp Settings</button>
+        </form>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Security Settings -->
+  <div class="col-md-6 mb-4">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="card-title mb-0">Security Settings</h5>
+      </div>
+      <div class="card-body">
+        <form id="security-settings-form">
+          <div class="mb-3">
+            <label for="min-password-length" class="form-label">Minimum Password Length</label>
+            <input type="number" class="form-control" id="min-password-length" value="<%= settings.minPasswordLength || 8 %>">
+          </div>
+          
+          <div class="mb-3 form-check">
+            <input type="checkbox" class="form-check-input" id="require-password-uppercase" <%= settings.requirePasswordUppercase ? 'checked' : '' %>>
+            <label class="form-check-label" for="require-password-uppercase">Require Uppercase Letters</label>
+          </div>
+          
+          <div class="mb-3 form-check">
+            <input type="checkbox" class="form-check-input" id="require-password-numbers" <%= settings.requirePasswordNumbers ? 'checked' : '' %>>
+            <label class="form-check-label" for="require-password-numbers">Require Numbers</label>
+          </div>
+          
+          <div class="mb-3 form-check">
+            <input type="checkbox" class="form-check-input" id="require-password-symbols" <%= settings.requirePasswordSymbols ? 'checked' : '' %>>
+            <label class="form-check-label" for="require-password-symbols">Require Special Characters</label>
+          </div>
+          
+          <div class="mb-3">
+            <label for="max-login-attempts" class="form-label">Max Login Attempts</label>
+            <input type="number" class="form-control" id="max-login-attempts" value="<%= settings.maxLoginAttempts || 5 %>">
+            <div class="form-text">Number of failed login attempts before temporary lockout</div>
+          </div>
+          
+          <button type="submit" class="btn btn-primary" id="save-security-settings-btn">Save Security Settings</button>
+        </form>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Maintenance Settings -->
+  <div class="col-md-6 mb-4">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="card-title mb-0">Maintenance</h5>
+      </div>
+      <div class="card-body">
+        <div class="mb-4">
+          <h6>Database Backup</h6>
+          <p class="text-muted">Create a backup of the database</p>
+          <button class="btn btn-primary" id="backup-database-btn">
+            <i class="bi bi-download"></i> Backup Database
+          </button>
+        </div>
+        
+        <div class="mb-4">
+          <h6>Clear Old Sessions</h6>
+          <p class="text-muted">Remove inactive WhatsApp sessions older than 30 days</p>
+          <button class="btn btn-warning" id="clear-old-sessions-btn">
+            <i class="bi bi-trash"></i> Clear Old Sessions
+          </button>
+        </div>
+        
+        <div class="mb-4">
+          <h6>System Logs</h6>
+          <p class="text-muted">View and download system logs</p>
+          <button class="btn btn-info" id="view-logs-btn" data-bs-toggle="modal" data-bs-target="#logs-modal">
+            <i class="bi bi-file-text"></i> View Logs
+          </button>
+        </div>
+        
+        <div class="mb-4">
+          <h6>Maintenance Mode</h6>
+          <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" id="maintenance-mode-switch" <%= settings.maintenanceMode ? 'checked' : '' %>>
+            <label class="form-check-label" for="maintenance-mode-switch">Enable Maintenance Mode</label>
+          </div>
+          <p class="text-muted">When enabled, only administrators can access the system</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- System Information -->
+<div class="row">
+  <div class="col-12 mb-4">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="card-title mb-0">System Information</h5>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-6">
+            <table class="table">
+              <tbody>
+                <tr>
+                  <th>Node.js Version</th>
+                  <td><%= systemInfo.nodeVersion %></td>
+                </tr>
+                <tr>
+                  <th>WhatsApp Web.js Version</th>
+                  <td><%= systemInfo.waWebVersion %></td>
+                </tr>
+                <tr>
+                  <th>Database Type</th>
+                  <td><%= systemInfo.dbType %></td>
+                </tr>
+                <tr>
+                  <th>Operating System</th>
+                  <td><%= systemInfo.os %></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="col-md-6">
+            <table class="table">
+              <tbody>
+                <tr>
+                  <th>Server Uptime</th>
+                  <td><%= systemInfo.uptime %></td>
+                </tr>
+                <tr>
+                  <th>Memory Usage</th>
+                  <td>
+                    <div class="progress" style="height: 20px;">
+                      <div class="progress-bar" role="progressbar" style="width: <%= systemInfo.memoryUsagePercent %>%;" aria-valuenow="<%= systemInfo.memoryUsagePercent %>" aria-valuemin="0" aria-valuemax="100"><%= systemInfo.memoryUsagePercent %>%</div>
+                    </div>
+                    <small class="text-muted"><%= systemInfo.memoryUsage %> / <%= systemInfo.totalMemory %></small>
+                  </td>
+                </tr>
+                <tr>
+                  <th>CPU Usage</th>
+                  <td>
+                    <div class="progress" style="height: 20px;">
+                      <div class="progress-bar" role="progressbar" style="width: <%= systemInfo.cpuUsage %>%;" aria-valuenow="<%= systemInfo.cpuUsage %>" aria-valuemin="0" aria-valuemax="100"><%= systemInfo.cpuUsage %>%</div>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <th>Disk Space</th>
+                  <td>
+                    <div class="progress" style="height: 20px;">
+                      <div class="progress-bar" role="progressbar" style="width: <%= systemInfo.diskUsagePercent %>%;" aria-valuenow="<%= systemInfo.diskUsagePercent %>" aria-valuemin="0" aria-valuemax="100"><%= systemInfo.diskUsagePercent %>%</div>
+                    </div>
+                    <small class="text-muted"><%= systemInfo.diskUsage %> / <%= systemInfo.totalDisk %></small>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Logs Modal -->
+<div class="modal fade" id="logs-modal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">System Logs</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label for="log-type" class="form-label">Log Type</label>
+          <select class="form-select" id="log-type">
+            <option value="system">System Logs</option>
+            <option value="access">Access Logs</option>
+            <option value="error">Error Logs</option>
+            <option value="whatsapp">WhatsApp Logs</option>
+          </select>
+        </div>
+        
+        <div class="mb-3">
+          <label for="log-date" class="form-label">Date</label>
+          <input type="date" class="form-control" id="log-date" value="<%= new Date().toISOString().split('T')[0] %>">
+        </div>
+        
+        <div class="mb-3">
+          <button class="btn btn-primary" id="load-logs-btn">
+            <i class="bi bi-arrow-repeat"></i> Load Logs
+          </button>
+          <button class="btn btn-success" id="download-logs-btn">
+            <i class="bi bi-download"></i> Download
+          </button>
+        </div>
+        
+        <div class="card bg-dark text-light">
+          <div class="card-body">
+            <pre id="logs-content" style="max-height: 400px; overflow-y: auto;">Loading logs...</pre>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // General Settings Form
+    const generalSettingsForm = document.getElementById('general-settings-form');
+    const saveGeneralSettingsBtn = document.getElementById('save-general-settings-btn');
+    
+    generalSettingsForm.addEventListener('submit', async function(e) {
+      e.preventDefault();
+      
+      const settings = {
+        siteName: document.getElementById('site-name').value,
+        sessionTimeout: parseInt(document.getElementById('session-timeout').value),
+        maxSessionsPerUser: parseInt(document.getElementById('max-sessions-per-user').value),
+        allowRegistration: document.getElementById('allow-registration').checked
+      };
+      
+      try {
+        saveGeneralSettingsBtn.disabled = true;
+        saveGeneralSettingsBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Saving...';
+        
+        const response = await fetch('/api/admin/settings/general', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(settings)
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+          showSuccess(data.message || 'General settings saved successfully');
+        } else {
+          showError(data.message || 'Failed to save general settings');
+        }
+      } catch (error) {
+        console.error('Error saving general settings:', error);
+        showError('An error occurred while saving general settings');
+      } finally {
+        saveGeneralSettingsBtn.disabled = false;
+        saveGeneralSettingsBtn.textContent = 'Save General Settings';
+      }
+    });
+    
+    // WhatsApp Settings Form
+    const whatsappSettingsForm = document.getElementById('whatsapp-settings-form');
+    const saveWhatsappSettingsBtn = document.getElementById('save-whatsapp-settings-btn');
+    
+    whatsappSettingsForm.addEventListener('submit', async function(e) {
+      e.preventDefault();
+      
+      const settings = {
+        defaultWebhookUrl: document.getElementById('default-webhook-url').value,
+        qrRefreshInterval: parseInt(document.getElementById('qr-refresh-interval').value),
+        sessionDataPath: document.getElementById('session-data-path').value,
+        keepAliveOnDisconnect: document.getElementById('keep-alive-on-disconnect').checked
+      };
+      
+      try {
+        saveWhatsappSettingsBtn.disabled = true;
+        saveWhatsappSettingsBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Saving...';
+        
+        const response = await fetch('/api/admin/settings/whatsapp', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(settings)
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+          showSuccess(data.message || 'WhatsApp settings saved successfully');
+        } else {
+          showError(data.message || 'Failed to save WhatsApp settings');
+        }
+      } catch (error) {
+        console.error('Error saving WhatsApp settings:', error);
+        showError('An error occurred while saving WhatsApp settings');
+      } finally {
+        saveWhatsappSettingsBtn.disabled = false;
+        saveWhatsappSettingsBtn.textContent = 'Save WhatsApp Settings';
+      }
+    });
+    
+    // Security Settings Form
+    const securitySettingsForm = document.getElementById('security-settings-form');
+    const saveSecuritySettingsBtn = document.getElementById('save-security-settings-btn');
+    
+    securitySettingsForm.addEventListener('submit', async function(e) {
+      e.preventDefault();
+      
+      const settings = {
+        minPasswordLength: parseInt(document.getElementById('min-password-length').value),
+        requirePasswordUppercase: document.getElementById('require-password-uppercase').checked,
+        requirePasswordNumbers: document.getElementById('require-password-numbers').checked,
+        requirePasswordSymbols: document.getElementById('require-password-symbols').checked,
+        maxLoginAttempts: parseInt(document.getElementById('max-login-attempts').value)
+      };
+      
+      try {
+        saveSecuritySettingsBtn.disabled = true;
+        saveSecuritySettingsBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Saving...';
+        
+        const response = await fetch('/api/admin/settings/security', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(settings)
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+          showSuccess(data.message || 'Security settings saved successfully');
+        } else {
+          showError(data.message || 'Failed to save security settings');
+        }
+      } catch (error) {
+        console.error('Error saving security settings:', error);
+        showError('An error occurred while saving security settings');
+      } finally {
+        saveSecuritySettingsBtn.disabled = false;
+        saveSecuritySettingsBtn.textContent = 'Save Security Settings';
+      }
+    });
+    
+    // Maintenance Mode Switch
+    const maintenanceModeSwitch = document.getElementById('maintenance-mode-switch');
+    
+    maintenanceModeSwitch.addEventListener('change', async function() {
+      try {
+        const response = await fetch('/api/admin/settings/maintenance', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            maintenanceMode: this.checked
+          })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+          showSuccess(data.message || `Maintenance mode ${this.checked ? 'enabled' : 'disabled'} successfully`);
+        } else {
+          showError(data.message || 'Failed to update maintenance mode');
+          // Revert the switch if failed
+          this.checked = !this.checked;
+        }
+      } catch (error) {
+        console.error('Error updating maintenance mode:', error);
+        showError('An error occurred while updating maintenance mode');
+        // Revert the switch if failed
+        this.checked = !this.checked;
+      }
+    });
+    
+    // Backup Database Button
+    const backupDatabaseBtn = document.getElementById('backup-database-btn');
+    
+    backupDatabaseBtn.addEventListener('click', async function() {
+      try {
+        backupDatabaseBtn.disabled = true;
+        backupDatabaseBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Backing up...';
+        
+        const response = await fetch('/api/admin/backup/database', {
+          method: 'POST'
+        });
+        
+        if (response.ok) {
+          const blob = await response.blob();
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.style.display = 'none';
+          a.href = url;
+          a.download = `waweb_backup_${new Date().toISOString().split('T')[0]}.sql`;
+          document.body.appendChild(a);
+          a.click();
+          window.URL.revokeObjectURL(url);
+          showSuccess('Database backup created successfully');
+        } else {
+          const data = await response.json();
+          showError(data.message || 'Failed to backup database');
+        }
+      } catch (error) {
+        console.error('Error backing up database:', error);
+        showError('An error occurred while backing up the database');
+      } finally {
+        backupDatabaseBtn.disabled = false;
+        backupDatabaseBtn.innerHTML = '<i class="bi bi-download"></i> Backup Database';
+      }
+    });
+    
+    // Clear Old Sessions Button
+    const clearOldSessionsBtn = document.getElementById('clear-old-sessions-btn');
+    
+    clearOldSessionsBtn.addEventListener('click', async function() {
+      if (confirm('Are you sure you want to clear all inactive WhatsApp sessions older than 30 days? This action cannot be undone.')) {
+        try {
+          clearOldSessionsBtn.disabled = true;
+          clearOldSessionsBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Clearing...';
+          
+          const response = await fetch('/api/admin/sessions/clear-old', {
+            method: 'POST'
+          });
+          
+          const data = await response.json();
+          
+          if (response.ok) {
+            showSuccess(data.message || `${data.count || 0} old sessions cleared successfully`);
+          } else {
+            showError(data.message || 'Failed to clear old sessions');
+          }
+        } catch (error) {
+          console.error('Error clearing old sessions:', error);
+          showError('An error occurred while clearing old sessions');
+        } finally {
+          clearOldSessionsBtn.disabled = false;
+          clearOldSessionsBtn.innerHTML = '<i class="bi bi-trash"></i> Clear Old Sessions';
+        }
+      }
+    });
+    
+    // Logs Modal
+    const loadLogsBtn = document.getElementById('load-logs-btn');
+    const downloadLogsBtn = document.getElementById('download-logs-btn');
+    const logsContent = document.getElementById('logs-content');
+    const logType = document.getElementById('log-type');
+    const logDate = document.getElementById('log-date');
+    
+    loadLogsBtn.addEventListener('click', async function() {
+      try {
+        loadLogsBtn.disabled = true;
+        loadLogsBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Loading...';
+        logsContent.textContent = 'Loading logs...';
+        
+        const response = await fetch(`/api/admin/logs?type=${logType.value}&date=${logDate.value}`);
+        
+        if (response.ok) {
+          const text = await response.text();
+          logsContent.textContent = text || 'No logs found for the selected date and type.';
+        } else {
+          const data = await response.json();
+          logsContent.textContent = data.message || 'Failed to load logs';
+        }
+      } catch (error) {
+        console.error('Error loading logs:', error);
+        logsContent.textContent = 'An error occurred while loading logs';
+      } finally {
+        loadLogsBtn.disabled = false;
+        loadLogsBtn.innerHTML = '<i class="bi bi-arrow-repeat"></i> Load Logs';
+      }
+    });
+    
+    downloadLogsBtn.addEventListener('click', async function() {
+      try {
+        downloadLogsBtn.disabled = true;
+        downloadLogsBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Downloading...';
+        
+        const response = await fetch(`/api/admin/logs/download?type=${logType.value}&date=${logDate.value}`);
+        
+        if (response.ok) {
+          const blob = await response.blob();
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.style.display = 'none';
+          a.href = url;
+          a.download = `${logType.value}_logs_${logDate.value}.log`;
+          document.body.appendChild(a);
+          a.click();
+          window.URL.revokeObjectURL(url);
+        } else {
+          const data = await response.json();
+          showError(data.message || 'Failed to download logs');
+        }
+      } catch (error) {
+        console.error('Error downloading logs:', error);
+        showError('An error occurred while downloading logs');
+      } finally {
+        downloadLogsBtn.disabled = false;
+        downloadLogsBtn.innerHTML = '<i class="bi bi-download"></i> Download';
+      }
+    });
+    
+    // Load logs when modal is shown
+    const logsModal = document.getElementById('logs-modal');
+    logsModal.addEventListener('shown.bs.modal', function() {
+      loadLogsBtn.click();
+    });
+    
+    // Helper functions for showing messages
+    function showSuccess(message) {
+      const toast = document.createElement('div');
+      toast.className = 'toast align-items-center text-white bg-success border-0';
+      toast.setAttribute('role', 'alert');
+      toast.setAttribute('aria-live', 'assertive');
+      toast.setAttribute('aria-atomic', 'true');
+      
+      toast.innerHTML = `
+        <div class="d-flex">
+          <div class="toast-body">
+            ${message}
+          </div>
+          <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+      `;
+      
+      const toastContainer = document.createElement('div');
+      toastContainer.className = 'toast-container position-fixed bottom-0 end-0 p-3';
+      toastContainer.appendChild(toast);
+      
+      document.body.appendChild(toastContainer);
+      const bsToast = new bootstrap.Toast(toast, { delay: 5000 });
+      bsToast.show();
+      
+      // Remove the container when hidden
+      toast.addEventListener('hidden.bs.toast', function () {
+        document.body.removeChild(toastContainer);
+      });
+    }
+    
+    function showError(message) {
+      const toast = document.createElement('div');
+      toast.className = 'toast align-items-center text-white bg-danger border-0';
+      toast.setAttribute('role', 'alert');
+      toast.setAttribute('aria-live', 'assertive');
+      toast.setAttribute('aria-atomic', 'true');
+      
+      toast.innerHTML = `
+        <div class="d-flex">
+          <div class="toast-body">
+            ${message}
+          </div>
+          <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+      `;
+      
+      const toastContainer = document.createElement('div');
+      toastContainer.className = 'toast-container position-fixed bottom-0 end-0 p-3';
+      toastContainer.appendChild(toast);
+      
+      document.body.appendChild(toastContainer);
+      const bsToast = new bootstrap.Toast(toast, { delay: 5000 });
+      bsToast.show();
+      
+      // Remove the container when hidden
+      toast.addEventListener('hidden.bs.toast', function () {
+        document.body.removeChild(toastContainer);
+      });
+    }
+  });
+</script>
+
+<%- include('../partials/footer') %>

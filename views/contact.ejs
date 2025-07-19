@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Contact Us - WaWeb</title>
+  
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+  
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+  
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/contact.css">
+</head>
+<body>
+  <div id="contact-page">
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary fixed-top">
+      <div class="container">
+        <a class="navbar-brand" href="/">WaWeb</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+          <ul class="navbar-nav me-auto">
+            <li class="nav-item">
+              <a class="nav-link" href="/">Home</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="/#features">Features</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="/#how-it-works">How It Works</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="/#pricing">Pricing</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="/docs">API Docs</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link active" href="/contact">Contact</a>
+            </li>
+          </ul>
+          <div class="d-flex">
+            <a href="/login" class="btn btn-outline-light me-2">Login</a>
+            <a href="/register" class="btn btn-light">Register</a>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Contact Section -->
+    <section class="contact-section">
+      <div class="container">
+        <h2 class="section-title">Contact Us</h2>
+        <p class="section-subtitle">Have questions or need help? We're here for you. Reach out to our team and we'll get back to you as soon as possible.</p>
+        
+        <div class="row mt-5">
+          <div class="col-lg-7 mb-4">
+            <div class="contact-form">
+              <h3 class="mb-4">Send us a message</h3>
+              <form id="contact-form">
+                <div class="row">
+                  <div class="col-md-6 form-group">
+                    <label for="name">Your Name</label>
+                    <input type="text" class="form-control" id="name" placeholder="Enter your name" required>
+                  </div>
+                  <div class="col-md-6 form-group">
+                    <label for="email">Your Email</label>
+                    <input type="email" class="form-control" id="email" placeholder="Enter your email" required>
+                  </div>
+                </div>
+                <div class="form-group mt-3">
+                  <label for="subject">Subject</label>
+                  <input type="text" class="form-control" id="subject" placeholder="Enter subject" required>
+                </div>
+                <div class="form-group mt-3">
+                  <label for="message">Message</label>
+                  <textarea class="form-control" id="message" rows="5" placeholder="Enter your message" required></textarea>
+                </div>
+                <div class="mt-4">
+                  <button type="submit" class="btn btn-primary">Send Message</button>
+                </div>
+              </form>
+            </div>
+          </div>
+          
+          <div class="col-lg-5">
+            <div class="contact-info">
+              <h3 class="contact-info-title">Contact Information</h3>
+              
+              <div class="contact-info-item">
+                <div class="contact-info-icon">
+                  <i class="bi bi-geo-alt"></i>
+                </div>
+                <div class="contact-info-text">
+                  <h5>Our Location</h5>
+                  <p>123 Business Street, Tech Park<br>San Francisco, CA 94107</p>
+                </div>
+              </div>
+              
+              <div class="contact-info-item">
+                <div class="contact-info-icon">
+                  <i class="bi bi-envelope"></i>
+                </div>
+                <div class="contact-info-text">
+                  <h5>Email Us</h5>
+                  <p>info@waweb.com<br>support@waweb.com</p>
+                </div>
+              </div>
+              
+              <div class="contact-info-item">
+                <div class="contact-info-icon">
+                  <i class="bi bi-telephone"></i>
+                </div>
+                <div class="contact-info-text">
+                  <h5>Call Us</h5>
+                  <p>+1 (123) 456-7890<br>+1 (987) 654-3210</p>
+                </div>
+              </div>
+              
+              <div class="contact-info-item">
+                <div class="contact-info-icon">
+                  <i class="bi bi-clock"></i>
+                </div>
+                <div class="contact-info-text">
+                  <h5>Business Hours</h5>
+                  <p>Monday - Friday: 9:00 AM - 6:00 PM<br>Saturday: 10:00 AM - 2:00 PM</p>
+                </div>
+              </div>
+              
+              <div class="social-media">
+                <a href="#" class="social-media-link"><i class="bi bi-facebook"></i></a>
+                <a href="#" class="social-media-link"><i class="bi bi-twitter"></i></a>
+                <a href="#" class="social-media-link"><i class="bi bi-linkedin"></i></a>
+                <a href="#" class="social-media-link"><i class="bi bi-instagram"></i></a>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Map -->
+        <div id="contact-map" class="contact-map"></div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white py-5">
+      <div class="container">
+        <div class="row">
+          <div class="col-lg-4 mb-4">
+            <h4>WaWeb</h4>
+            <p>The ultimate WhatsApp Web API solution for businesses of all sizes.</p>
+            <div class="social-media">
+              <a href="#" class="social-media-link"><i class="bi bi-facebook"></i></a>
+              <a href="#" class="social-media-link"><i class="bi bi-twitter"></i></a>
+              <a href="#" class="social-media-link"><i class="bi bi-linkedin"></i></a>
+              <a href="#" class="social-media-link"><i class="bi bi-github"></i></a>
+            </div>
+          </div>
+          <div class="col-lg-2 col-md-4 mb-4">
+            <h5>Product</h5>
+            <ul class="list-unstyled">
+              <li><a href="/#features" class="text-white">Features</a></li>
+              <li><a href="/#pricing" class="text-white">Pricing</a></li>
+              <li><a href="/docs" class="text-white">API Documentation</a></li>
+              <li><a href="#" class="text-white">Changelog</a></li>
+            </ul>
+          </div>
+          <div class="col-lg-2 col-md-4 mb-4">
+            <h5>Company</h5>
+            <ul class="list-unstyled">
+              <li><a href="#" class="text-white">About Us</a></li>
+              <li><a href="/contact" class="text-white">Contact</a></li>
+              <li><a href="#" class="text-white">Careers</a></li>
+              <li><a href="#" class="text-white">Blog</a></li>
+            </ul>
+          </div>
+          <div class="col-lg-2 col-md-4 mb-4">
+            <h5>Support</h5>
+            <ul class="list-unstyled">
+              <li><a href="#" class="text-white">Help Center</a></li>
+              <li><a href="#" class="text-white">Status</a></li>
+              <li><a href="#" class="text-white">Community</a></li>
+              <li><a href="#" class="text-white">FAQ</a></li>
+            </ul>
+          </div>
+          <div class="col-lg-2 mb-4">
+            <h5>Legal</h5>
+            <ul class="list-unstyled">
+              <li><a href="#" class="text-white">Terms of Service</a></li>
+              <li><a href="#" class="text-white">Privacy Policy</a></li>
+              <li><a href="#" class="text-white">Cookie Policy</a></li>
+              <li><a href="#" class="text-white">GDPR</a></li>
+            </ul>
+          </div>
+        </div>
+        <hr class="my-4 bg-light">
+        <div class="row">
+          <div class="col-md-6 text-center text-md-start">
+            <p class="mb-0">&copy; 2023 WaWeb. All rights reserved.</p>
+          </div>
+          <div class="col-md-6 text-center text-md-end">
+            <p class="mb-0">Made with <i class="bi bi-heart-fill text-danger"></i> by WaWeb Team</p>
+          </div>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Bootstrap JS Bundle with Popper -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+  
+  <!-- Google Maps API (Replace YOUR_API_KEY with your actual API key) -->
+  <!-- <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&callback=initMap" async defer></script> -->
+  
+  <!-- Custom JS -->
+  <script src="/js/contact.js"></script>
+</body>
+</html>

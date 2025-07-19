@@ -1,0 +1,293 @@
+<%- include('../partials/header', { title: title }) %>
+
+<div class="row">
+  <div class="col-12">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h1 class="h3">Admin Dashboard</h1>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <!-- Users Stats Card -->
+  <div class="col-md-6 col-xl-3 mb-4">
+    <div class="card">
+      <div class="card-body">
+        <div class="row">
+          <div class="col mt-0">
+            <h5 class="card-title">Total Users</h5>
+          </div>
+          <div class="col-auto">
+            <div class="stat text-primary">
+              <i class="bi bi-people-fill" style="font-size: 1.5rem;"></i>
+            </div>
+          </div>
+        </div>
+        <h1 class="mt-1 mb-3"><%= stats.totalUsers %></h1>
+        <div class="mb-0">
+          <span class="text-<%= stats.newUsers > 0 ? 'success' : 'danger' %> me-2">
+            <i class="bi bi-<%= stats.newUsers > 0 ? 'arrow-up' : 'arrow-down' %>"></i> <%= stats.newUsers %>
+          </span>
+          <span class="text-muted">Since last week</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Sessions Stats Card -->
+  <div class="col-md-6 col-xl-3 mb-4">
+    <div class="card">
+      <div class="card-body">
+        <div class="row">
+          <div class="col mt-0">
+            <h5 class="card-title">Active Sessions</h5>
+          </div>
+          <div class="col-auto">
+            <div class="stat text-primary">
+              <i class="bi bi-whatsapp" style="font-size: 1.5rem;"></i>
+            </div>
+          </div>
+        </div>
+        <h1 class="mt-1 mb-3"><%= stats.activeSessions %></h1>
+        <div class="mb-0">
+          <span class="text-<%= stats.newSessions > 0 ? 'success' : 'danger' %> me-2">
+            <i class="bi bi-<%= stats.newSessions > 0 ? 'arrow-up' : 'arrow-down' %>"></i> <%= stats.newSessions %>
+          </span>
+          <span class="text-muted">Since last week</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Messages Stats Card -->
+  <div class="col-md-6 col-xl-3 mb-4">
+    <div class="card">
+      <div class="card-body">
+        <div class="row">
+          <div class="col mt-0">
+            <h5 class="card-title">Total Messages</h5>
+          </div>
+          <div class="col-auto">
+            <div class="stat text-primary">
+              <i class="bi bi-chat-dots-fill" style="font-size: 1.5rem;"></i>
+            </div>
+          </div>
+        </div>
+        <h1 class="mt-1 mb-3"><%= stats.totalMessages %></h1>
+        <div class="mb-0">
+          <span class="text-<%= stats.newMessages > 0 ? 'success' : 'danger' %> me-2">
+            <i class="bi bi-<%= stats.newMessages > 0 ? 'arrow-up' : 'arrow-down' %>"></i> <%= stats.newMessages %>
+          </span>
+          <span class="text-muted">Since yesterday</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- System Stats Card -->
+  <div class="col-md-6 col-xl-3 mb-4">
+    <div class="card">
+      <div class="card-body">
+        <div class="row">
+          <div class="col mt-0">
+            <h5 class="card-title">System Status</h5>
+          </div>
+          <div class="col-auto">
+            <div class="stat text-primary">
+              <i class="bi bi-hdd-stack-fill" style="font-size: 1.5rem;"></i>
+            </div>
+          </div>
+        </div>
+        <h1 class="mt-1 mb-3 text-success">Online</h1>
+        <div class="mb-0">
+          <span class="text-success me-2">
+            <i class="bi bi-check-circle"></i>
+          </span>
+          <span class="text-muted">All systems operational</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <!-- Recent Users Card -->
+  <div class="col-md-6 mb-4">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="card-title mb-0">Recent Users</h5>
+      </div>
+      <div class="card-body">
+        <% if (recentUsers && recentUsers.length > 0) { %>
+          <div class="table-responsive">
+            <table class="table table-hover">
+              <thead>
+                <tr>
+                  <th>Username</th>
+                  <th>Email</th>
+                  <th>Role</th>
+                  <th>Joined</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% recentUsers.forEach(user => { %>
+                  <tr>
+                    <td><%= user.username %></td>
+                    <td><%= user.email %></td>
+                    <td>
+                      <% if (user.role === 'admin') { %>
+                        <span class="badge bg-danger">Admin</span>
+                      <% } else { %>
+                        <span class="badge bg-primary">User</span>
+                      <% } %>
+                    </td>
+                    <td><%= new Date(user.created_at).toLocaleDateString() %></td>
+                  </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
+          <div class="text-center mt-3">
+            <a href="/admin/users" class="btn btn-sm btn-outline-primary">View All Users</a>
+          </div>
+        <% } else { %>
+          <div class="text-center py-4">
+            <p class="text-muted">No users found</p>
+          </div>
+        <% } %>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Recent Sessions Card -->
+  <div class="col-md-6 mb-4">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="card-title mb-0">Recent Sessions</h5>
+      </div>
+      <div class="card-body">
+        <% if (recentSessions && recentSessions.length > 0) { %>
+          <div class="table-responsive">
+            <table class="table table-hover">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>User</th>
+                  <th>Status</th>
+                  <th>Created</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% recentSessions.forEach(session => { %>
+                  <tr>
+                    <td><%= session.session_name %></td>
+                    <td><%= session.username %></td>
+                    <td>
+                      <% if (session.is_active) { %>
+                        <span class="badge bg-success">Active</span>
+                      <% } else { %>
+                        <span class="badge bg-secondary">Inactive</span>
+                      <% } %>
+                    </td>
+                    <td><%= new Date(session.created_at).toLocaleDateString() %></td>
+                  </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
+          <div class="text-center mt-3">
+            <a href="/admin/sessions" class="btn btn-sm btn-outline-primary">View All Sessions</a>
+          </div>
+        <% } else { %>
+          <div class="text-center py-4">
+            <p class="text-muted">No sessions found</p>
+          </div>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Message Activity Chart -->
+<div class="row">
+  <div class="col-12 mb-4">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="card-title mb-0">Message Activity (Last 7 Days)</h5>
+      </div>
+      <div class="card-body">
+        <div class="chart-container" style="position: relative; height:300px;">
+          <canvas id="messageActivityChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Sample data for the chart - in a real app, this would come from the server
+    const messageData = <%- JSON.stringify(messageActivity) %>;
+    
+    // Extract dates and counts
+    const dates = messageData.map(item => item.date);
+    const incomingCounts = messageData.map(item => item.incoming);
+    const outgoingCounts = messageData.map(item => item.outgoing);
+    
+    // Create the chart
+    const ctx = document.getElementById('messageActivityChart').getContext('2d');
+    new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: dates,
+        datasets: [
+          {
+            label: 'Incoming Messages',
+            data: incomingCounts,
+            borderColor: 'rgba(40, 167, 69, 1)',
+            backgroundColor: 'rgba(40, 167, 69, 0.1)',
+            tension: 0.4,
+            fill: true
+          },
+          {
+            label: 'Outgoing Messages',
+            data: outgoingCounts,
+            borderColor: 'rgba(0, 123, 255, 1)',
+            backgroundColor: 'rgba(0, 123, 255, 0.1)',
+            tension: 0.4,
+            fill: true
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'top',
+          },
+          tooltip: {
+            mode: 'index',
+            intersect: false,
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: {
+              precision: 0
+            }
+          }
+        },
+        interaction: {
+          mode: 'nearest',
+          axis: 'x',
+          intersect: false
+        }
+      }
+    });
+  });
+</script>
+
+<%- include('../partials/footer') %>

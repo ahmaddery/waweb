@@ -1,0 +1,533 @@
+<%- include('../partials/header', { title: title }) %>
+
+<div class="row">
+  <div class="col-12">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h1 class="h3">Messages for <%= sessionName %></h1>
+      <a href="/admin/sessions" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Back to Sessions
+      </a>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="card-title mb-0">Message History</h5>
+        <div class="d-flex">
+          <div class="input-group me-2">
+            <input type="text" class="form-control" id="search-input" placeholder="Search messages...">
+            <button class="btn btn-outline-secondary" type="button" id="search-btn">
+              <i class="bi bi-search"></i>
+            </button>
+          </div>
+          <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#send-message-modal">
+            <i class="bi bi-send"></i> Send Message
+          </button>
+        </div>
+      </div>
+      <div class="card-body">
+        <% if (messages && messages.length > 0) { %>
+          <div class="table-responsive">
+            <table class="table table-hover">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Phone</th>
+                  <th>Type</th>
+                  <th>Content</th>
+                  <th>Status</th>
+                  <th>Timestamp</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% messages.forEach(message => { %>
+                  <tr>
+                    <td><%= message.id %></td>
+                    <td><%= message.phone_number %></td>
+                    <td>
+                      <% if (message.message_type === 'text') { %>
+                        <span class="badge bg-primary">Text</span>
+                      <% } else if (message.message_type === 'image') { %>
+                        <span class="badge bg-info">Image</span>
+                      <% } else if (message.message_type === 'document') { %>
+                        <span class="badge bg-warning">Document</span>
+                      <% } else if (message.message_type === 'audio') { %>
+                        <span class="badge bg-success">Audio</span>
+                      <% } else if (message.message_type === 'video') { %>
+                        <span class="badge bg-danger">Video</span>
+                      <% } else { %>
+                        <span class="badge bg-secondary"><%= message.message_type %></span>
+                      <% } %>
+                    </td>
+                    <td>
+                      <% if (message.message_type === 'text') { %>
+                        <%= message.content.length > 50 ? message.content.substring(0, 50) + '...' : message.content %>
+                      <% } else { %>
+                        <i class="bi bi-file-earmark"></i> Media content
+                      <% } %>
+                    </td>
+                    <td>
+                      <% if (message.direction === 'incoming') { %>
+                        <span class="badge bg-success">Received</span>
+                      <% } else if (message.direction === 'outgoing') { %>
+                        <% if (message.status === 'sent') { %>
+                          <span class="badge bg-primary">Sent</span>
+                        <% } else if (message.status === 'delivered') { %>
+                          <span class="badge bg-info">Delivered</span>
+                        <% } else if (message.status === 'read') { %>
+                          <span class="badge bg-success">Read</span>
+                        <% } else if (message.status === 'failed') { %>
+                          <span class="badge bg-danger">Failed</span>
+                        <% } else { %>
+                          <span class="badge bg-secondary"><%= message.status %></span>
+                        <% } %>
+                      <% } %>
+                    </td>
+                    <td><%= new Date(message.timestamp).toLocaleString() %></td>
+                    <td>
+                      <button class="btn btn-sm btn-info view-message-btn" data-message-id="<%= message.id %>" data-bs-toggle="modal" data-bs-target="#view-message-modal">
+                        <i class="bi bi-eye"></i>
+                      </button>
+                    </td>
+                  </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
+          
+          <!-- Pagination -->
+          <% if (totalPages > 1) { %>
+            <nav aria-label="Message pagination">
+              <ul class="pagination justify-content-center">
+                <li class="page-item <%= currentPage === 1 ? 'disabled' : '' %>">
+                  <a class="page-link" href="?page=<%= currentPage - 1 %><%= search ? '&search=' + search : '' %>" aria-label="Previous">
+                    <span aria-hidden="true">&laquo;</span>
+                  </a>
+                </li>
+                
+                <% for(let i = 1; i <= totalPages; i++) { %>
+                  <li class="page-item <%= currentPage === i ? 'active' : '' %>">
+                    <a class="page-link" href="?page=<%= i %><%= search ? '&search=' + search : '' %>"><%= i %></a>
+                  </li>
+                <% } %>
+                
+                <li class="page-item <%= currentPage === totalPages ? 'disabled' : '' %>">
+                  <a class="page-link" href="?page=<%= currentPage + 1 %><%= search ? '&search=' + search : '' %>" aria-label="Next">
+                    <span aria-hidden="true">&raquo;</span>
+                  </a>
+                </li>
+              </ul>
+            </nav>
+          <% } %>
+        <% } else { %>
+          <div class="text-center py-5">
+            <i class="bi bi-chat-dots text-muted" style="font-size: 3rem;"></i>
+            <p class="text-muted mt-3">No messages found</p>
+            <% if (search) { %>
+              <p>No results found for "<%= search %>". <a href="/admin/messages/<%= sessionId %>">Clear search</a></p>
+            <% } else { %>
+              <p>This WhatsApp session has no messages yet.</p>
+            <% } %>
+          </div>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Message Statistics Card -->
+<div class="row mt-4">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="card-title mb-0">Message Statistics</h5>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-3 mb-4 mb-md-0">
+            <div class="card bg-light">
+              <div class="card-body text-center">
+                <h6 class="card-title">Total Messages</h6>
+                <h2 class="mb-0"><%= stats.totalMessages %></h2>
+              </div>
+            </div>
+          </div>
+          
+          <div class="col-md-3 mb-4 mb-md-0">
+            <div class="card bg-light">
+              <div class="card-body text-center">
+                <h6 class="card-title">Incoming</h6>
+                <h2 class="mb-0 text-success"><%= stats.incomingMessages %></h2>
+              </div>
+            </div>
+          </div>
+          
+          <div class="col-md-3 mb-4 mb-md-0">
+            <div class="card bg-light">
+              <div class="card-body text-center">
+                <h6 class="card-title">Outgoing</h6>
+                <h2 class="mb-0 text-primary"><%= stats.outgoingMessages %></h2>
+              </div>
+            </div>
+          </div>
+          
+          <div class="col-md-3">
+            <div class="card bg-light">
+              <div class="card-body text-center">
+                <h6 class="card-title">Today's Messages</h6>
+                <h2 class="mb-0 text-info"><%= stats.todayMessages %></h2>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Send Message Modal -->
+<div class="modal fade" id="send-message-modal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Send WhatsApp Message</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form id="send-message-form">
+          <div class="mb-3">
+            <label for="phone-number" class="form-label">Phone Number</label>
+            <input type="text" class="form-control" id="phone-number" placeholder="e.g. 6281234567890" required>
+            <div class="form-text">Include country code without + or 00 (e.g. 62 for Indonesia)</div>
+          </div>
+          <div class="mb-3">
+            <label for="message-text" class="form-label">Message</label>
+            <textarea class="form-control" id="message-text" rows="4" required></textarea>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-primary" id="send-message-btn">Send Message</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- View Message Modal -->
+<div class="modal fade" id="view-message-modal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Message Details</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="text-center" id="message-loading">
+          <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+          </div>
+          <p class="mt-2">Loading message details...</p>
+        </div>
+        
+        <div id="message-details" style="display: none;">
+          <div class="mb-3">
+            <h6>Phone Number</h6>
+            <p id="detail-phone"></p>
+          </div>
+          
+          <div class="mb-3">
+            <h6>Direction</h6>
+            <p id="detail-direction"></p>
+          </div>
+          
+          <div class="mb-3">
+            <h6>Type</h6>
+            <p id="detail-type"></p>
+          </div>
+          
+          <div class="mb-3">
+            <h6>Status</h6>
+            <p id="detail-status"></p>
+          </div>
+          
+          <div class="mb-3">
+            <h6>Timestamp</h6>
+            <p id="detail-timestamp"></p>
+          </div>
+          
+          <div class="mb-3">
+            <h6>Content</h6>
+            <div id="detail-content" class="p-3 bg-light rounded"></div>
+          </div>
+          
+          <div class="mb-3" id="detail-media-container" style="display: none;">
+            <h6>Media</h6>
+            <div id="detail-media" class="text-center"></div>
+          </div>
+        </div>
+        
+        <div id="message-error" style="display: none;">
+          <div class="alert alert-danger" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            <span id="error-message">Failed to load message details.</span>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Elements
+    const searchInput = document.getElementById('search-input');
+    const searchBtn = document.getElementById('search-btn');
+    const sendMessageForm = document.getElementById('send-message-form');
+    const phoneNumberInput = document.getElementById('phone-number');
+    const messageTextInput = document.getElementById('message-text');
+    const sendMessageBtn = document.getElementById('send-message-btn');
+    const viewMessageBtns = document.querySelectorAll('.view-message-btn');
+    
+    // Session ID from URL
+    const sessionId = '<%= sessionId %>';
+    
+    // Send message button
+    sendMessageBtn.addEventListener('click', async function() {
+      const phoneNumber = phoneNumberInput.value.trim();
+      const messageText = messageTextInput.value.trim();
+      
+      if (!phoneNumber || !messageText) {
+        showError('Please fill in all fields');
+        return;
+      }
+      
+      try {
+        sendMessageBtn.disabled = true;
+        sendMessageBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Sending...';
+        
+        const response = await fetch(`/api/admin/send/${sessionId}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            phone: phoneNumber,
+            message: messageText
+          })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+          showSuccess(data.message || 'Message sent successfully');
+          
+          // Clear form
+          phoneNumberInput.value = '';
+          messageTextInput.value = '';
+          
+          // Close modal
+          const modal = bootstrap.Modal.getInstance(document.getElementById('send-message-modal'));
+          modal.hide();
+          
+          // Reload page after a short delay
+          setTimeout(() => {
+            window.location.reload();
+          }, 2000);
+        } else {
+          showError(data.message || 'Failed to send message');
+        }
+      } catch (error) {
+        console.error('Error sending message:', error);
+        showError('An error occurred while sending the message');
+      } finally {
+        sendMessageBtn.disabled = false;
+        sendMessageBtn.textContent = 'Send Message';
+      }
+    });
+    
+    // View message buttons
+    viewMessageBtns.forEach(button => {
+      button.addEventListener('click', async function() {
+        const messageId = this.getAttribute('data-message-id');
+        
+        // Reset modal content
+        document.getElementById('message-loading').style.display = 'block';
+        document.getElementById('message-details').style.display = 'none';
+        document.getElementById('message-error').style.display = 'none';
+        document.getElementById('detail-media-container').style.display = 'none';
+        
+        try {
+          const response = await fetch(`/api/admin/messages/${sessionId}/${messageId}`);
+          const data = await response.json();
+          
+          if (response.ok && data.message) {
+            const message = data.message;
+            
+            // Fill in details
+            document.getElementById('detail-phone').textContent = message.phone_number;
+            document.getElementById('detail-direction').textContent = message.direction === 'incoming' ? 'Incoming (Received)' : 'Outgoing (Sent)';
+            document.getElementById('detail-type').textContent = message.message_type.charAt(0).toUpperCase() + message.message_type.slice(1);
+            
+            let statusText = message.status;
+            if (message.status) {
+              statusText = message.status.charAt(0).toUpperCase() + message.status.slice(1);
+            } else if (message.direction === 'incoming') {
+              statusText = 'Received';
+            }
+            document.getElementById('detail-status').textContent = statusText;
+            
+            document.getElementById('detail-timestamp').textContent = new Date(message.timestamp).toLocaleString();
+            
+            // Handle content based on type
+            if (message.message_type === 'text') {
+              document.getElementById('detail-content').textContent = message.content;
+            } else {
+              document.getElementById('detail-content').textContent = 'Media message';
+              
+              // If there's a media URL, display it
+              if (message.media_url) {
+                const mediaContainer = document.getElementById('detail-media');
+                mediaContainer.innerHTML = '';
+                
+                if (message.message_type === 'image') {
+                  const img = document.createElement('img');
+                  img.src = message.media_url;
+                  img.className = 'img-fluid rounded';
+                  img.alt = 'Image message';
+                  mediaContainer.appendChild(img);
+                } else if (message.message_type === 'document') {
+                  const link = document.createElement('a');
+                  link.href = message.media_url;
+                  link.className = 'btn btn-primary';
+                  link.target = '_blank';
+                  link.innerHTML = '<i class="bi bi-file-earmark-arrow-down"></i> Download Document';
+                  mediaContainer.appendChild(link);
+                } else if (message.message_type === 'audio') {
+                  const audio = document.createElement('audio');
+                  audio.controls = true;
+                  audio.src = message.media_url;
+                  mediaContainer.appendChild(audio);
+                } else if (message.message_type === 'video') {
+                  const video = document.createElement('video');
+                  video.controls = true;
+                  video.className = 'img-fluid';
+                  video.src = message.media_url;
+                  mediaContainer.appendChild(video);
+                }
+                
+                document.getElementById('detail-media-container').style.display = 'block';
+              }
+            }
+            
+            // Show details
+            document.getElementById('message-loading').style.display = 'none';
+            document.getElementById('message-details').style.display = 'block';
+          } else {
+            throw new Error(data.message || 'Failed to load message details');
+          }
+        } catch (error) {
+          console.error('Error loading message details:', error);
+          document.getElementById('message-loading').style.display = 'none';
+          document.getElementById('error-message').textContent = error.message || 'Failed to load message details';
+          document.getElementById('message-error').style.display = 'block';
+        }
+      });
+    });
+    
+    // Search button
+    searchBtn.addEventListener('click', function() {
+      const searchTerm = searchInput.value.trim();
+      
+      if (searchTerm) {
+        window.location.href = `/admin/messages/${sessionId}?search=${encodeURIComponent(searchTerm)}`;
+      } else {
+        window.location.href = `/admin/messages/${sessionId}`;
+      }
+    });
+    
+    // Search input enter key
+    searchInput.addEventListener('keyup', function(event) {
+      if (event.key === 'Enter') {
+        searchBtn.click();
+      }
+    });
+    
+    // Set search input value from URL parameter
+    const urlParams = new URLSearchParams(window.location.search);
+    const searchParam = urlParams.get('search');
+    if (searchParam) {
+      searchInput.value = searchParam;
+    }
+    
+    // Helper functions for showing messages
+    function showSuccess(message) {
+      const toast = document.createElement('div');
+      toast.className = 'toast align-items-center text-white bg-success border-0';
+      toast.setAttribute('role', 'alert');
+      toast.setAttribute('aria-live', 'assertive');
+      toast.setAttribute('aria-atomic', 'true');
+      
+      toast.innerHTML = `
+        <div class="d-flex">
+          <div class="toast-body">
+            ${message}
+          </div>
+          <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+      `;
+      
+      const toastContainer = document.createElement('div');
+      toastContainer.className = 'toast-container position-fixed bottom-0 end-0 p-3';
+      toastContainer.appendChild(toast);
+      
+      document.body.appendChild(toastContainer);
+      const bsToast = new bootstrap.Toast(toast, { delay: 5000 });
+      bsToast.show();
+      
+      // Remove the container when hidden
+      toast.addEventListener('hidden.bs.toast', function () {
+        document.body.removeChild(toastContainer);
+      });
+    }
+    
+    function showError(message) {
+      const toast = document.createElement('div');
+      toast.className = 'toast align-items-center text-white bg-danger border-0';
+      toast.setAttribute('role', 'alert');
+      toast.setAttribute('aria-live', 'assertive');
+      toast.setAttribute('aria-atomic', 'true');
+      
+      toast.innerHTML = `
+        <div class="d-flex">
+          <div class="toast-body">
+            ${message}
+          </div>
+          <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+      `;
+      
+      const toastContainer = document.createElement('div');
+      toastContainer.className = 'toast-container position-fixed bottom-0 end-0 p-3';
+      toastContainer.appendChild(toast);
+      
+      document.body.appendChild(toastContainer);
+      const bsToast = new bootstrap.Toast(toast, { delay: 5000 });
+      bsToast.show();
+      
+      // Remove the container when hidden
+      toast.addEventListener('hidden.bs.toast', function () {
+        document.body.removeChild(toastContainer);
+      });
+    }
+  });
+</script>
+
+<%- include('../partials/footer') %>

@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WaWeb - WhatsApp Web API Solution</title>
+  
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+  
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+  
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/home.css">
+</head>
+<body>
+  <div id="home-page">
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary fixed-top">
+      <div class="container">
+        <a class="navbar-brand" href="/">WaWeb</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+          <ul class="navbar-nav me-auto">
+            <li class="nav-item">
+              <a class="nav-link active" href="#home">Home</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="#features">Features</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="#how-it-works">How It Works</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="#pricing">Pricing</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="/docs">API Docs</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="/contact">Contact</a>
+            </li>
+          </ul>
+          <div class="d-flex">
+            <a href="/login" class="btn btn-outline-light me-2">Login</a>
+            <a href="/register" class="btn btn-light">Register</a>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section id="home" class="hero-section">
+      <div class="container">
+        <div class="row align-items-center">
+          <div class="col-lg-6 hero-content">
+            <h1 class="hero-title animate-on-scroll">WhatsApp Web API Solution for Your Business</h1>
+            <p class="hero-subtitle animate-on-scroll">Connect your applications to WhatsApp and automate your messaging workflow with our powerful API.</p>
+            <div class="d-flex flex-wrap animate-on-scroll">
+              <a href="/register" class="btn btn-light btn-lg me-3 mb-3">Get Started</a>
+              <a href="#how-it-works" class="btn btn-outline-light btn-lg mb-3">Learn More</a>
+            </div>
+          </div>
+          <div class="col-lg-6 d-none d-lg-block">
+            <img src="https://via.placeholder.com/600x400" alt="WhatsApp Web API" class="hero-image animate-on-scroll">
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="features-section">
+      <div class="container">
+        <h2 class="section-title animate-on-scroll">Powerful Features</h2>
+        <p class="section-subtitle animate-on-scroll">Our WhatsApp Web API provides everything you need to integrate WhatsApp messaging into your applications.</p>
+        
+        <div class="feature-tabs animate-on-scroll">
+          <a href="#" class="feature-tab active" data-target="messaging">Messaging</a>
+          <a href="#" class="feature-tab" data-target="automation">Automation</a>
+          <a href="#" class="feature-tab" data-target="integration">Integration</a>
+          <a href="#" class="feature-tab" data-target="analytics">Analytics</a>
+        </div>
+        
+        <div class="row mt-5">
+          <div class="feature-content active" data-content="messaging">
+            <div class="row">
+              <div class="col-md-4 mb-4">
+                <div class="feature-card">
+                  <div class="feature-icon">
+                    <i class="bi bi-chat-dots"></i>
+                  </div>
+                  <h3 class="feature-title">Text Messages</h3>
+                  <p class="feature-description">Send and receive text messages programmatically through our API.</p>
+                </div>
+              </div>
+              <div class="col-md-4 mb-4">
+                <div class="feature-card">
+                  <div class="feature-icon">
+                    <i class="bi bi-image"></i>
+                  </div>
+                  <h3 class="feature-title">Media Messages</h3>
+                  <p class="feature-description">Share images, documents, audio, and video files with your contacts.</p>
+                </div>
+              </div>
+              <div class="col-md-4 mb-4">
+                <div class="feature-card">
+                  <div class="feature-icon">
+                    <i class="bi bi-geo-alt"></i>
+                  </div>
+                  <h3 class="feature-title">Location Sharing</h3>
+                  <p class="feature-description">Send location information to your contacts through the API.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="feature-content" data-content="automation">
+            <div class="row">
+              <div class="col-md-4 mb-4">
+                <div class="feature-card">
+                  <div class="feature-icon">
+                    <i class="bi bi-robot"></i>
+                  </div>
+                  <h3 class="feature-title">Chatbots</h3>
+                  <p class="feature-description">Build intelligent chatbots to automate customer interactions.</p>
+                </div>
+              </div>
+              <div class="col-md-4 mb-4">
+                <div class="feature-card">
+                  <div class="feature-icon">
+                    <i class="bi bi-clock-history"></i>
+                  </div>
+                  <h3 class="feature-title">Scheduled Messages</h3>
+                  <p class="feature-description">Schedule messages to be sent at specific times.</p>
+                </div>
+              </div>
+              <div class="col-md-4 mb-4">
+                <div class="feature-card">
+                  <div class="feature-icon">
+                    <i class="bi bi-reply-all"></i>
+                  </div>
+                  <h3 class="feature-title">Auto Replies</h3>
+                  <p class="feature-description">Set up automatic responses based on keywords or patterns.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="feature-content" data-content="integration">
+            <div class="row">
+              <div class="col-md-4 mb-4">
+                <div class="feature-card">
+                  <div class="feature-icon">
+                    <i class="bi bi-code-slash"></i>
+                  </div>
+                  <h3 class="feature-title">RESTful API</h3>
+                  <p class="feature-description">Easy to integrate with any programming language or platform.</p>
+                </div>
+              </div>
+              <div class="col-md-4 mb-4">
+                <div class="feature-card">
+                  <div class="feature-icon">
+                    <i class="bi bi-webhook"></i>
+                  </div>
+                  <h3 class="feature-title">Webhooks</h3>
+                  <p class="feature-description">Receive real-time notifications for incoming messages and events.</p>
+                </div>
+              </div>
+              <div class="col-md-4 mb-4">
+                <div class="feature-card">
+                  <div class="feature-icon">
+                    <i class="bi bi-puzzle"></i>
+                  </div>
+                  <h3 class="feature-title">Third-party Integration</h3>
+                  <p class="feature-description">Connect with CRM, ERP, and other business systems.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="feature-content" data-content="analytics">
+            <div class="row">
+              <div class="col-md-4 mb-4">
+                <div class="feature-card">
+                  <div class="feature-icon">
+                    <i class="bi bi-graph-up"></i>
+                  </div>
+                  <h3 class="feature-title">Message Analytics</h3>
+                  <p class="feature-description">Track message delivery, read receipts, and response rates.</p>
+                </div>
+              </div>
+              <div class="col-md-4 mb-4">
+                <div class="feature-card">
+                  <div class="feature-icon">
+                    <i class="bi bi-people"></i>
+                  </div>
+                  <h3 class="feature-title">User Engagement</h3>
+                  <p class="feature-description">Analyze user engagement and interaction patterns.</p>
+                </div>
+              </div>
+              <div class="col-md-4 mb-4">
+                <div class="feature-card">
+                  <div class="feature-icon">
+                    <i class="bi bi-file-earmark-text"></i>
+                  </div>
+                  <h3 class="feature-title">Custom Reports</h3>
+                  <p class="feature-description">Generate custom reports for your messaging campaigns.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- How It Works Section -->
+    <section id="how-it-works" class="how-it-works-section">
+      <div class="container">
+        <h2 class="section-title animate-on-scroll">How It Works</h2>
+        <p class="section-subtitle animate-on-scroll">Get started with our WhatsApp Web API in just a few simple steps.</p>
+        
+        <div class="row mt-5">
+          <div class="col-md-3 mb-4">
+            <div class="step-card animate-on-scroll">
+              <div class="step-number">1</div>
+              <h3 class="step-title">Create Account</h3>
+              <p class="step-description">Sign up for an account on our platform and verify your email address.</p>
+            </div>
+          </div>
+          <div class="col-md-3 mb-4">
+            <div class="step-card animate-on-scroll">
+              <div class="step-number">2</div>
+              <h3 class="step-title">Connect WhatsApp</h3>
+              <p class="step-description">Scan the QR code with your WhatsApp to connect your account.</p>
+            </div>
+          </div>
+          <div class="col-md-3 mb-4">
+            <div class="step-card animate-on-scroll">
+              <div class="step-number">3</div>
+              <h3 class="step-title">Get API Key</h3>
+              <p class="step-description">Generate your API key to authenticate your API requests.</p>
+            </div>
+          </div>
+          <div class="col-md-3 mb-4">
+            <div class="step-card animate-on-scroll">
+              <div class="step-number">4</div>
+              <h3 class="step-title">Integrate & Use</h3>
+              <p class="step-description">Integrate the API with your application and start sending messages.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Testimonials Section -->
+    <section id="testimonials" class="testimonials-section">
+      <div class="container">
+        <h2 class="section-title animate-on-scroll">What Our Customers Say</h2>
+        <p class="section-subtitle animate-on-scroll">Trusted by businesses of all sizes around the world.</p>
+        
+        <div id="testimonial-carousel" class="carousel slide mt-5 animate-on-scroll" data-bs-ride="carousel">
+          <div class="carousel-inner">
+            <div class="carousel-item active">
+              <div class="row justify-content-center">
+                <div class="col-lg-8">
+                  <div class="testimonial-card">
+                    <p class="testimonial-content">"WaWeb has transformed how we communicate with our customers. The API is reliable, easy to integrate, and the support team is always helpful."</p>
+                    <div class="testimonial-author">
+                      <img src="https://via.placeholder.com/50" alt="John Doe" class="testimonial-author-image">
+                      <div>
+                        <h5 class="testimonial-author-name">John Doe</h5>
+                        <p class="testimonial-author-title">CTO, Tech Solutions Inc.</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="carousel-item">
+              <div class="row justify-content-center">
+                <div class="col-lg-8">
+                  <div class="testimonial-card">
+                    <p class="testimonial-content">"We've been able to automate our customer service responses and save countless hours. The analytics feature helps us understand our customer engagement better."</p>
+                    <div class="testimonial-author">
+                      <img src="https://via.placeholder.com/50" alt="Jane Smith" class="testimonial-author-image">
+                      <div>
+                        <h5 class="testimonial-author-name">Jane Smith</h5>
+                        <p class="testimonial-author-title">Marketing Director, Global Retail</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="carousel-item">
+              <div class="row justify-content-center">
+                <div class="col-lg-8">
+                  <div class="testimonial-card">
+                    <p class="testimonial-content">"The integration was seamless, and we were up and running in less than a day. Our customers love the quick responses they get through WhatsApp."</p>
+                    <div class="testimonial-author">
+                      <img src="https://via.placeholder.com/50" alt="Robert Johnson" class="testimonial-author-image">
+                      <div>
+                        <h5 class="testimonial-author-name">Robert Johnson</h5>
+                        <p class="testimonial-author-title">CEO, Startup Innovations</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <button class="carousel-control-prev" type="button" data-bs-target="#testimonial-carousel" data-bs-slide="prev">
+            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+            <span class="visually-hidden">Previous</span>
+          </button>
+          <button class="carousel-control-next" type="button" data-bs-target="#testimonial-carousel" data-bs-slide="next">
+            <span class="carousel-control-next-icon" aria-hidden="true"></span>
+            <span class="visually-hidden">Next</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Pricing Section -->
+    <section id="pricing" class="pricing-section">
+      <div class="container">
+        <h2 class="section-title animate-on-scroll">Simple, Transparent Pricing</h2>
+        <p class="section-subtitle animate-on-scroll">Choose the plan that fits your business needs.</p>
+        
+        <div class="row mt-5">
+          <div class="col-lg-4 mb-4">
+            <div class="pricing-card animate-on-scroll">
+              <h3 class="pricing-title">Basic</h3>
+              <div class="pricing-price">$29<span class="pricing-period">/month</span></div>
+              <ul class="pricing-features">
+                <li>1 WhatsApp Connection</li>
+                <li>1,000 Messages/month</li>
+                <li>Text & Image Messages</li>
+                <li>Basic API Access</li>
+                <li>Email Support</li>
+                <li>24-hour Message History</li>
+              </ul>
+              <a href="/register" class="btn btn-outline-primary">Get Started</a>
+            </div>
+          </div>
+          <div class="col-lg-4 mb-4">
+            <div class="pricing-card popular animate-on-scroll">
+              <span class="pricing-badge">Most Popular</span>
+              <h3 class="pricing-title">Professional</h3>
+              <div class="pricing-price">$79<span class="pricing-period">/month</span></div>
+              <ul class="pricing-features">
+                <li>3 WhatsApp Connections</li>
+                <li>5,000 Messages/month</li>
+                <li>All Message Types</li>
+                <li>Full API Access</li>
+                <li>Priority Support</li>
+                <li>30-day Message History</li>
+                <li>Basic Analytics</li>
+                <li>Webhooks</li>
+              </ul>
+              <a href="/register" class="btn btn-primary">Get Started</a>
+            </div>
+          </div>
+          <div class="col-lg-4 mb-4">
+            <div class="pricing-card animate-on-scroll">
+              <h3 class="pricing-title">Enterprise</h3>
+              <div class="pricing-price">$199<span class="pricing-period">/month</span></div>
+              <ul class="pricing-features">
+                <li>10 WhatsApp Connections</li>
+                <li>20,000 Messages/month</li>
+                <li>All Message Types</li>
+                <li>Full API Access</li>
+                <li>24/7 Support</li>
+                <li>90-day Message History</li>
+                <li>Advanced Analytics</li>
+                <li>Webhooks</li>
+                <li>Custom Integration</li>
+                <li>Dedicated Account Manager</li>
+              </ul>
+              <a href="/register" class="btn btn-outline-primary">Get Started</a>
+            </div>
+          </div>
+        </div>
+        
+        <div class="text-center mt-4 animate-on-scroll">
+          <p>Need a custom plan? <a href="/contact">Contact us</a> for custom pricing.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta-section">
+      <div class="container">
+        <h2 class="cta-title animate-on-scroll">Ready to Get Started?</h2>
+        <p class="cta-subtitle animate-on-scroll">Join thousands of businesses that use our WhatsApp Web API to improve their customer communication.</p>
+        
+        <div class="row justify-content-center mt-5">
+          <div class="col-lg-6">
+            <div class="demo-form animate-on-scroll">
+              <h3 class="demo-form-title">Request a Demo</h3>
+              <form id="demo-form">
+                <div class="mb-3">
+                  <input type="text" class="form-control" id="name" placeholder="Your Name" required>
+                </div>
+                <div class="mb-3">
+                  <input type="email" class="form-control" id="email" placeholder="Your Email" required>
+                </div>
+                <div class="mb-3">
+                  <input type="text" class="form-control" id="company" placeholder="Company Name" required>
+                </div>
+                <div class="mb-3">
+                  <select class="form-select" id="plan" required>
+                    <option value="" selected disabled>Select a Plan</option>
+                    <option value="basic">Basic</option>
+                    <option value="professional">Professional</option>
+                    <option value="enterprise">Enterprise</option>
+                    <option value="custom">Custom</option>
+                  </select>
+                </div>
+                <button type="submit" class="btn btn-light w-100">Request Demo</button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white py-5">
+      <div class="container">
+        <div class="row">
+          <div class="col-lg-4 mb-4">
+            <h4>WaWeb</h4>
+            <p>The ultimate WhatsApp Web API solution for businesses of all sizes.</p>
+            <div class="social-media">
+              <a href="#" class="social-media-link"><i class="bi bi-facebook"></i></a>
+              <a href="#" class="social-media-link"><i class="bi bi-twitter"></i></a>
+              <a href="#" class="social-media-link"><i class="bi bi-linkedin"></i></a>
+              <a href="#" class="social-media-link"><i class="bi bi-github"></i></a>
+            </div>
+          </div>
+          <div class="col-lg-2 col-md-4 mb-4">
+            <h5>Product</h5>
+            <ul class="list-unstyled">
+              <li><a href="#features" class="text-white">Features</a></li>
+              <li><a href="#pricing" class="text-white">Pricing</a></li>
+              <li><a href="/docs" class="text-white">API Documentation</a></li>
+              <li><a href="#" class="text-white">Changelog</a></li>
+            </ul>
+          </div>
+          <div class="col-lg-2 col-md-4 mb-4">
+            <h5>Company</h5>
+            <ul class="list-unstyled">
+              <li><a href="#" class="text-white">About Us</a></li>
+              <li><a href="/contact" class="text-white">Contact</a></li>
+              <li><a href="#" class="text-white">Careers</a></li>
+              <li><a href="#" class="text-white">Blog</a></li>
+            </ul>
+          </div>
+          <div class="col-lg-2 col-md-4 mb-4">
+            <h5>Support</h5>
+            <ul class="list-unstyled">
+              <li><a href="#" class="text-white">Help Center</a></li>
+              <li><a href="#" class="text-white">Status</a></li>
+              <li><a href="#" class="text-white">Community</a></li>
+              <li><a href="#" class="text-white">FAQ</a></li>
+            </ul>
+          </div>
+          <div class="col-lg-2 mb-4">
+            <h5>Legal</h5>
+            <ul class="list-unstyled">
+              <li><a href="#" class="text-white">Terms of Service</a></li>
+              <li><a href="#" class="text-white">Privacy Policy</a></li>
+              <li><a href="#" class="text-white">Cookie Policy</a></li>
+              <li><a href="#" class="text-white">GDPR</a></li>
+            </ul>
+          </div>
+        </div>
+        <hr class="my-4 bg-light">
+        <div class="row">
+          <div class="col-md-6 text-center text-md-start">
+            <p class="mb-0">&copy; 2023 WaWeb. All rights reserved.</p>
+          </div>
+          <div class="col-md-6 text-center text-md-end">
+            <p class="mb-0">Made with <i class="bi bi-heart-fill text-danger"></i> by WaWeb Team</p>
+          </div>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Bootstrap JS Bundle with Popper -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+  
+  <!-- Custom JS -->
+  <script src="/js/home.js"></script>
+</body>
+</html>

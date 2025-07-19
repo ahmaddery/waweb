@@ -13,13 +13,13 @@ Sebuah aplikasi Node.js yang menyediakan API untuk WhatsApp Web dengan antarmuka
 
 ## Endpoint API
 
-- `GET /api/status` - Memeriksa status koneksi WhatsApp
-- `GET /api/qr` - Mendapatkan kode QR untuk otentikasi
-- `POST /api/session/start` - Memulai sesi baru
-- `POST /api/session/delete` - Menghapus sesi yang aktif
-- `POST /api/webhook` - Mengatur URL webhook
-- `GET /api/webhook` - Mendapatkan URL webhook saat ini
-- `POST /api/send` - Mengirim pesan WhatsApp
+- `GET /api/whatsapp/status` - Memeriksa status koneksi WhatsApp
+- `GET /api/whatsapp/qr/:sessionId` - Mendapatkan kode QR untuk otentikasi
+- `POST /api/whatsapp/session/start` - Memulai sesi baru
+- `DELETE /api/whatsapp/session/:sessionId` - Menghapus sesi yang aktif
+- `POST /api/whatsapp/webhook/:sessionId` - Mengatur URL webhook
+- `GET /api/whatsapp/webhook/:sessionId` - Mendapatkan URL webhook saat ini
+- `POST /api/whatsapp/session/:id/send` - Mengirim pesan WhatsApp
 
 ## Persyaratan
 

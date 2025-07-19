@@ -1,0 +1,119 @@
+<nav class="sidebar">
+  <div class="sidebar-header">
+    <h3>WhatsApp Web API</h3>
+  </div>
+  
+  <ul class="list-unstyled components">
+    <% if (user) { %>
+      <% if (user.role === 'admin') { %>
+        <!-- Admin Navigation -->
+        <li class="<%= activePage === 'admin-dashboard' ? 'active' : '' %>">
+          <a href="/admin/dashboard">
+            <i class="bi bi-speedometer2"></i>
+            <span>Admin Dashboard</span>
+          </a>
+        </li>
+        
+        <li class="<%= activePage === 'admin-users' ? 'active' : '' %>">
+          <a href="/admin/users">
+            <i class="bi bi-people"></i>
+            <span>User Management</span>
+          </a>
+        </li>
+        
+        <li class="<%= activePage === 'admin-sessions' ? 'active' : '' %>">
+          <a href="/admin/sessions">
+            <i class="bi bi-whatsapp"></i>
+            <span>Session Management</span>
+          </a>
+        </li>
+        
+        <li class="<%= activePage === 'admin-settings' ? 'active' : '' %>">
+          <a href="/admin/settings">
+            <i class="bi bi-gear"></i>
+            <span>System Settings</span>
+          </a>
+        </li>
+        
+        <li class="sidebar-divider"></li>
+      <% } %>
+      
+      <!-- User Navigation -->
+      <li class="<%= activePage === 'user-dashboard' ? 'active' : '' %>">
+        <a href="/user/dashboard">
+          <i class="bi bi-house"></i>
+          <span>Dashboard</span>
+        </a>
+      </li>
+      
+      <li class="<%= activePage === 'user-sessions' ? 'active' : '' %>">
+        <a href="/user/sessions">
+          <i class="bi bi-whatsapp"></i>
+          <span>WhatsApp Sessions</span>
+        </a>
+      </li>
+      
+      <li class="<%= activePage === 'user-profile' ? 'active' : '' %>">
+        <a href="/user/profile">
+          <i class="bi bi-person"></i>
+          <span>Profile</span>
+        </a>
+      </li>
+      
+      <li>
+        <a href="#" id="sidebar-logout-btn">
+          <i class="bi bi-box-arrow-right"></i>
+          <span>Logout</span>
+        </a>
+      </li>
+    <% } else { %>
+      <!-- Guest Navigation -->
+      <li class="<%= activePage === 'login' ? 'active' : '' %>">
+        <a href="/login">
+          <i class="bi bi-box-arrow-in-right"></i>
+          <span>Login</span>
+        </a>
+      </li>
+      
+      <li class="<%= activePage === 'register' ? 'active' : '' %>">
+        <a href="/register">
+          <i class="bi bi-person-plus"></i>
+          <span>Register</span>
+        </a>
+      </li>
+    <% } %>
+  </ul>
+  
+  <div class="sidebar-footer">
+    <p class="text-muted small">WhatsApp Web API</p>
+  </div>
+</nav>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Handle sidebar logout button
+    const sidebarLogoutBtn = document.getElementById('sidebar-logout-btn');
+    if (sidebarLogoutBtn) {
+      sidebarLogoutBtn.addEventListener('click', async function(e) {
+        e.preventDefault();
+        
+        try {
+          const response = await fetch('/api/auth/logout', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          });
+          
+          if (response.ok) {
+            window.location.href = '/login';
+          } else {
+            console.error('Logout failed');
+          }
+        } catch (error) {
+          console.error('Error during logout:', error);
+        }
+      });
+    }
+  });
+</script>
