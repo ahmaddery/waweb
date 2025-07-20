@@ -47,6 +47,15 @@ CREATE TABLE IF NOT EXISTS messages (
 -- Add index to media_url column for better query performance
 CREATE INDEX IF NOT EXISTS idx_media_url ON messages(media_url(191));
 
+-- Create settings table for global configurations
+CREATE TABLE IF NOT EXISTS settings (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  setting_key VARCHAR(100) NOT NULL UNIQUE,
+  setting_value TEXT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
 -- Insert default admin user (password: admin123)
 INSERT INTO users (username, password, email, role) VALUES
 ('admin', '$2b$10$eCQDljoYhOq0Js9XiGBnWOHQwxVsKLjw3S8GZnC2Ou.e9ynpxZfXW', 'admin@example.com', 'admin');

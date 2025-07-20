@@ -1,3 +1,13 @@
+// Global error handler agar server tidak mati jika ada error tidak tertangani
+process.on('uncaughtException', (err) => {
+  console.error('[FATAL] Uncaught Exception:', err);
+  // Jangan process.exit, biarkan server tetap hidup
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('[FATAL] Unhandled Rejection at:', promise, 'reason:', reason);
+  // Jangan process.exit, biarkan server tetap hidup
+});
 const express = require('express');
 const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcode = require('qrcode');
@@ -26,6 +36,11 @@ const io = socketIO(server);
 // Socket.io connection logging
 io.on('connection', (socket) => {
   console.log(`Client connected: ${socket.id}`);
+  
+  // Log when client receives QR event
+  socket.on('qr_received_by_client', (data) => {
+    console.log(`Client ${socket.id} received QR for session ${data.sessionId}`);
+  });
   
   socket.on('disconnect', () => {
     console.log(`Client disconnected: ${socket.id}`);
@@ -76,6 +91,38 @@ app.use(adminRoutes);
 // Serve static files after routes to ensure routes take precedence
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Windows-friendly file cleanup utility
+async function safeDeleteDirectory(dirPath, maxRetries = 3, delay = 2000) {
+  if (!fs.existsSync(dirPath)) {
+    return { success: true, message: 'Directory does not exist' };
+  }
+  
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      // Wait before attempting deletion to allow file handles to be released
+      if (attempt > 1) {
+        console.log(`Cleanup attempt ${attempt}/${maxRetries} for ${dirPath}`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+      
+      fs.rmSync(dirPath, { recursive: true, force: true });
+      console.log(`Directory successfully deleted: ${dirPath}`);
+      return { success: true, message: 'Directory deleted successfully' };
+    } catch (error) {
+      console.warn(`Cleanup attempt ${attempt}/${maxRetries} failed:`, error.message);
+      
+      if (attempt === maxRetries) {
+        console.error(`Final cleanup attempt failed for ${dirPath}:`, error);
+        return { 
+          success: false, 
+          message: `Failed to delete directory after ${maxRetries} attempts: ${error.message}`,
+          error 
+        };
+      }
+    }
+  }
+}
+
 // Variabel untuk menyimpan status dan webhook URL
 let whatsappClients = {}; // Menyimpan client berdasarkan sessionId
 let clientsReady = {}; // Menyimpan status ready berdasarkan sessionId
@@ -101,20 +148,33 @@ const initWhatsappClient = (sessionId) => {
   whatsappClients[sessionId] = new Client({
     authStrategy: new LocalAuth({ clientId: sessionId }),
     puppeteer: {
-      headless: false,
+      headless: true,
       args: [
         '--no-sandbox',
         '--disable-setuid-sandbox',
         '--disable-web-security',
         '--disable-features=VizDisplayCompositor',
-        '--window-position=9999,9999',
-        '--window-size=1,1'
+        '--disable-dev-shm-usage',
+        '--no-first-run',
+        '--disable-background-timer-throttling',
+        '--disable-backgrounding-occluded-windows',
+        '--disable-renderer-backgrounding',
+        '--disable-extensions',
+        '--disable-plugins',
+        '--disable-default-apps'
       ],
-      timeout: 0
+      timeout: 60000, // 60 seconds timeout
+      dumpio: false // Set to true for debugging browser output
     }
   });
   
   console.log(`WhatsApp client created for session ${sessionId}, setting up event listeners`);
+
+  // Add auth_failure event listener
+  whatsappClients[sessionId].on('auth_failure', (msg) => {
+    console.error(`Authentication failure for session ${sessionId}:`, msg);
+    io.emit('auth_failure', { sessionId: sessionId.toString(), error: msg });
+  });
 
   // Add loading event listener
   whatsappClients[sessionId].on('loading_screen', (percent, message) => {
@@ -126,25 +186,21 @@ const initWhatsappClient = (sessionId) => {
     console.log(`WhatsApp client authenticated for session ${sessionId}`);
   });
 
-  // Add auth_failure event listener
-  whatsappClients[sessionId].on('auth_failure', (msg) => {
-    console.error(`Authentication failure for session ${sessionId}:`, msg);
-    io.emit('auth_failure', { sessionId: sessionId.toString(), error: msg });
-  });
-
   whatsappClients[sessionId].on('qr', (qr) => {
     console.log(`QR Code received for session ${sessionId}`);
-    console.log(`QR Code data: ${qr.substring(0, 20)}...`);
+    console.log(`QR Code length: ${qr.length} characters`);
+    console.log(`QR Code data preview: ${qr.substring(0, 50)}...`);
     
     // Store QR code in memory
     qrCodes[sessionId] = qr;
+    console.log(`QR code stored in memory for session ${sessionId}`);
     
     console.log(`Emitting QR code to all connected clients for session ${sessionId}`);
     io.emit('qr', { sessionId: sessionId.toString(), qr });
-    console.log(`QR code emitted to client for session ${sessionId}`);
+    console.log(`QR code emitted successfully for session ${sessionId}`);
   });
 
-  whatsappClients[sessionId].on('ready', () => {
+  whatsappClients[sessionId].on('ready', async () => {
     console.log(`WhatsApp client is ready for session ${sessionId}!`);
     clientsReady[sessionId] = true;
     
@@ -154,11 +210,15 @@ const initWhatsappClient = (sessionId) => {
     io.emit('ready', { sessionId, status: 'Connected' });
     
     // Update session status in database
-    const WhatsappSession = require('./models/whatsapp-session');
-    WhatsappSession.update(sessionId, { isActive: true });
+    try {
+      const WhatsappSession = require('./models/whatsapp-session');
+      await WhatsappSession.update(sessionId, { isActive: true });
+    } catch (error) {
+      console.error(`Error updating session status for ${sessionId}:`, error);
+    }
   });
 
-  whatsappClients[sessionId].on('disconnected', () => {
+  whatsappClients[sessionId].on('disconnected', async () => {
     console.log(`WhatsApp client disconnected for session ${sessionId}`);
     clientsReady[sessionId] = false;
     
@@ -168,92 +228,102 @@ const initWhatsappClient = (sessionId) => {
     io.emit('disconnected', { sessionId, status: 'Disconnected' });
     
     // Update session status in database
-    const WhatsappSession = require('./models/whatsapp-session');
-    WhatsappSession.update(sessionId, { isActive: false });
+    try {
+      const WhatsappSession = require('./models/whatsapp-session');
+      await WhatsappSession.update(sessionId, { isActive: false });
+    } catch (error) {
+      console.error(`Error updating session status for ${sessionId}:`, error);
+    }
   });
 
   whatsappClients[sessionId].on('message', async (message) => {
     console.log(`Message received for session ${sessionId}: ${message.body}`);
     
-    // Save message to database
-    const Message = require('./models/message');
-    await Message.create({
-      sessionId,
-      messageId: message.id._serialized,
-      fromNumber: message.from,
-      toNumber: message.to,
-      messageType: message.type,
-      messageBody: message.body,
-      mediaUrl: message.hasMedia ? await message.downloadMedia() : null,
-      timestamp: new Date(message.timestamp * 1000)
-    });
-    
-    // Forward message to webhook if set
-    if (webhookUrls[sessionId]) {
-      try {
-        const response = await fetch(webhookUrls[sessionId], {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            sessionId,
-            from: message.from,
-            body: message.body,
-            timestamp: message.timestamp,
-            type: message.type
-          })
-        });
-        console.log(`Webhook notification sent for session ${sessionId}: ${response.status}`);
-      } catch (error) {
-        console.error(`Error sending webhook notification for session ${sessionId}:`, error);
+    try {
+      // Save message to database
+      const Message = require('./models/message');
+      await Message.create({
+        sessionId,
+        messageId: message.id._serialized,
+        fromNumber: message.from,
+        toNumber: message.to,
+        messageType: message.type,
+        messageBody: message.body,
+        mediaUrl: message.hasMedia ? await message.downloadMedia() : null,
+        timestamp: new Date(message.timestamp * 1000)
+      });
+      
+      // Forward message to webhook if set
+      if (webhookUrls[sessionId]) {
+        try {
+          const response = await fetch(webhookUrls[sessionId], {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              sessionId,
+              from: message.from,
+              body: message.body,
+              timestamp: message.timestamp,
+              type: message.type
+            })
+          });
+          console.log(`Webhook notification sent for session ${sessionId}: ${response.status}`);
+        } catch (error) {
+          console.error(`Error sending webhook notification for session ${sessionId}:`, error);
+        }
       }
+    } catch (error) {
+      console.error(`Error processing message for session ${sessionId}:`, error);
     }
   });
 
   console.log(`Calling initialize() for WhatsApp client session ${sessionId}`);
   
-  // Set a timeout for QR code generation
+  // Set a timeout for QR code generation (increase to 60 seconds)
   const qrTimeout = setTimeout(() => {
-    console.log(`QR code timeout for session ${sessionId} - no QR received within 30 seconds`);
-    io.emit('qr_timeout', { sessionId: sessionId.toString(), message: 'QR code generation timeout' });
-  }, 30000);
+    console.log(`QR code timeout for session ${sessionId} - no QR received within 60 seconds`);
+    io.emit('qr_timeout', { sessionId: sessionId.toString(), message: 'QR code generation timeout. Please try again.' });
+  }, 60000); // Increase to 60 seconds
   
   // Clear timeout when QR is received
   whatsappClients[sessionId].once('qr', () => {
+    console.log(`QR code received for session ${sessionId}, clearing timeout`);
     clearTimeout(qrTimeout);
   });
   
+  // Clear timeout on ready
+  whatsappClients[sessionId].once('ready', () => {
+    console.log(`Client ready for session ${sessionId}, clearing timeout`);
+    clearTimeout(qrTimeout);
+  });
+  
+  // Clear timeout on auth failure
+  whatsappClients[sessionId].once('auth_failure', () => {
+    console.log(`Auth failure for session ${sessionId}, clearing timeout`);
+    clearTimeout(qrTimeout);
+  });
+  
+  // Initialize the client
+  console.log(`Calling whatsappClients[${sessionId}].initialize()`);
   whatsappClients[sessionId].initialize().then(() => {
-    console.log(`WhatsApp client initialize() completed for session ${sessionId}`);
-    
-    // Monitor browser page for disconnection (with minimal window)
-    const client = whatsappClients[sessionId];
-    if (client.pupPage) {
-      client.pupPage.on('close', () => {
-        console.log(`Browser page closed for session ${sessionId}`);
-        clientsReady[sessionId] = false;
-        io.emit('disconnected', { sessionId, status: 'Disconnected' });
-        
-        // Update session status in database
-        const WhatsappSession = require('./models/whatsapp-session');
-        WhatsappSession.update(sessionId, { isActive: false });
-      });
-      
-      client.pupPage.on('error', (error) => {
-        console.error(`Browser page error for session ${sessionId}:`, error);
-        clientsReady[sessionId] = false;
-        io.emit('disconnected', { sessionId, status: 'Disconnected' });
-        
-        // Update session status in database
-        const WhatsappSession = require('./models/whatsapp-session');
-        WhatsappSession.update(sessionId, { isActive: false });
-      });
-    }
+    console.log(`WhatsApp client initialize() completed successfully for session ${sessionId}`);
   }).catch(err => {
     console.error(`Error in initialize() for session ${sessionId}:`, err);
     clearTimeout(qrTimeout);
     io.emit('init_error', { sessionId: sessionId.toString(), error: err.message });
+    
+    // Clean up failed client
+    if (whatsappClients[sessionId]) {
+      try {
+        whatsappClients[sessionId].destroy();
+      } catch (destroyError) {
+        console.error(`Error destroying failed client for session ${sessionId}:`, destroyError);
+      }
+      delete whatsappClients[sessionId];
+      delete clientsReady[sessionId];
+    }
   });
 };
 
@@ -379,23 +449,39 @@ app.delete('/api/whatsapp/session/:id', async (req, res) => {
   }
   
   try {
-    // Destroy the WhatsApp client
+    // Destroy the WhatsApp client with graceful cleanup
+    console.log(`Starting graceful cleanup for session ${sessionId}`);
+    
+    // First, try to gracefully disconnect
+    if (whatsappClients[sessionId] && whatsappClients[sessionId].info) {
+      try {
+        await whatsappClients[sessionId].logout();
+        console.log(`Session ${sessionId} logged out successfully`);
+      } catch (logoutError) {
+        console.warn(`Logout warning for session ${sessionId}:`, logoutError.message);
+        // Don't throw error here, continue with destroy
+      }
+    }
+    
+    // Add delay to allow file handles to be released
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    // Now destroy the client
     await whatsappClients[sessionId].destroy();
+    console.log(`Client destroyed for session ${sessionId}`);
+    
     delete whatsappClients[sessionId];
     delete clientsReady[sessionId];
     
     // Clean up QR code from memory
     delete qrCodes[sessionId];
-    
-    // Delete session files
+
+    // Delete session files with retry mechanism for Windows
     const sessionDir = path.join(__dirname, '.wwebjs_auth', sessionId);
-    if (fs.existsSync(sessionDir)) {
-      try {
-        fs.rmSync(sessionDir, { recursive: true, force: true });
-        console.log(`Session files deleted successfully for ${sessionId}`);
-      } catch (fsError) {
-        console.error(`Error deleting session files for ${sessionId}:`, fsError);
-      }
+    const deleteResult = await safeDeleteDirectory(sessionDir);
+    
+    if (!deleteResult.success) {
+      console.warn(`Session ${sessionId} cleanup warning: ${deleteResult.message}`);
     }
     
     // Update session status in database
@@ -410,12 +496,42 @@ app.delete('/api/whatsapp/session/:id', async (req, res) => {
     io.emit('disconnected', { sessionId, status: 'Disconnected' });
   } catch (error) {
     console.error('Error deleting WhatsApp session:', error);
-    res.status(500).json({ error: error.message });
+    
+    // Even if there's an error, try to clean up what we can
+    try {
+      if (whatsappClients[sessionId]) {
+        delete whatsappClients[sessionId];
+        delete clientsReady[sessionId];
+        delete qrCodes[sessionId];
+      }
+      
+      // Update database status regardless of cleanup errors
+      const WhatsappSession = require('./models/whatsapp-session');
+      await WhatsappSession.update(sessionId, { isActive: false });
+      
+      io.emit('disconnected', { sessionId, status: 'Disconnected' });
+    } catch (cleanupError) {
+      console.error('Error in cleanup during error handling:', cleanupError);
+    }
+    
+    // Return appropriate error based on error type
+    if (error.message && error.message.includes('EBUSY')) {
+      res.status(500).json({ 
+        error: 'Session is busy. Files may still be in use. Please try again in a few moments.',
+        code: 'EBUSY',
+        sessionId 
+      });
+    } else {
+      res.status(500).json({ 
+        error: error.message,
+        sessionId 
+      });
+    }
   }
 });
 
 // Set webhook endpoint for specific session
-app.post('/api/whatsapp/session/:id/webhook', async (req, res) => {
+app.post('/api/whatsapp/webhook/:id', async (req, res) => {
   const sessionId = req.params.id;
   const { url } = req.body;
   
@@ -472,6 +588,52 @@ app.get('/api/whatsapp/session/:id/webhook', async (req, res) => {
   }
 });
 
+// Global webhook endpoints (seperti di waweb-referensi untuk backward compatibility)
+app.post('/api/webhook', async (req, res) => {
+  try {
+    const { url } = req.body;
+    
+    if (!url) {
+      return res.status(400).json({ error: 'Webhook URL is required' });
+    }
+
+    // Import Settings model
+    const Settings = require('./models/settings');
+    
+    // Save to database
+    await Settings.setGlobalWebhookUrl(url);
+    
+    // Log for debugging
+    console.log('[DEBUG] Global webhook URL set:', url);
+    
+    res.json({ 
+      message: 'Webhook URL saved successfully', 
+      url: url 
+    });
+  } catch (error) {
+    console.error('[ERROR] Global webhook POST error:', error);
+    res.status(500).json({ error: 'Failed to save webhook URL' });
+  }
+});
+
+app.get('/api/webhook', async (req, res) => {
+  try {
+    // Import Settings model
+    const Settings = require('./models/settings');
+    
+    // Get from database
+    const webhookUrl = await Settings.getGlobalWebhookUrl();
+    
+    // Log for debugging
+    console.log('[DEBUG] Global webhook GET requested, URL:', webhookUrl);
+    
+    res.json({ url: webhookUrl || '' });
+  } catch (error) {
+    console.error('[ERROR] Global webhook GET error:', error);
+    res.status(500).json({ error: 'Failed to get webhook URL' });
+  }
+});
+
 // Send message endpoint is now handled by WhatsappController in user routes
 
 // Create session endpoint
@@ -515,42 +677,47 @@ app.post('/api/sessions/:id/start', async (req, res) => {
     const sessionId = req.params.id;
     console.log(`Starting session for ID: ${sessionId}`);
     
-    if (whatsappClients[sessionId]) {
-      console.log(`Session ${sessionId} already exists, returning error`);
-      return res.status(400).json({ error: 'Session already exists' });
+    // Check if client already exists and is ready
+    if (whatsappClients[sessionId] && clientsReady[sessionId]) {
+      console.log(`Session ${sessionId} is already connected`);
+      return res.json({ 
+        success: true,
+        message: 'WhatsApp session is already connected',
+        sessionId,
+        status: 'already_connected'
+      });
     }
     
-    // Initialize WhatsApp client for this session
-    console.log(`Initializing WhatsApp client for session ${sessionId}`);
-    initWhatsappClient(sessionId);
+    // Check if client exists but not ready (still initializing)
+    if (whatsappClients[sessionId] && !clientsReady[sessionId]) {
+      console.log(`Session ${sessionId} is already initializing`);
+      return res.json({ 
+        success: true,
+        message: 'WhatsApp session is initializing, please wait for QR code',
+        sessionId,
+        status: 'initializing'
+      });
+    }
     
-    // Add error handler before initializing
-    whatsappClients[sessionId].on('auth_failure', (msg) => {
-      console.error(`Authentication failure for session ${sessionId}:`, msg);
-      io.emit('auth_failure', { sessionId, error: msg });
-    });
-    
-    whatsappClients[sessionId].on('disconnected', (reason) => {
-      console.log(`WhatsApp client disconnected for session ${sessionId}: ${reason}`);
-      io.emit('disconnected', { sessionId, status: 'Disconnected', reason });
-    });
-    
-    // Initialize the client with error handling
-    console.log(`Calling initialize() for session ${sessionId}`);
-    whatsappClients[sessionId].initialize().catch(err => {
-      console.error(`Error initializing WhatsApp client for session ${sessionId}:`, err);
-      io.emit('error', { sessionId, error: err.message });
-    });
+    // If client doesn't exist, create and initialize it
+    if (!whatsappClients[sessionId]) {
+      console.log(`Initializing WhatsApp client for session ${sessionId}`);
+      initWhatsappClient(sessionId);
+    }
     
     console.log(`Sending success response for session ${sessionId}`);
     res.json({ 
       success: true,
       message: 'WhatsApp session started',
-      sessionId
+      sessionId,
+      status: 'starting'
     });
   } catch (error) {
     console.error('Error starting WhatsApp session:', error);
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ 
+      success: false, 
+      error: error.message 
+    });
   }
 });
 
@@ -687,7 +854,44 @@ async function startServer() {
       console.error('Failed to connect to database. Please check your database configuration.');
       process.exit(1);
     }
-    
+
+    // Auto-restart all active WhatsApp sessions with retry logic
+    try {
+      const WhatsappSession = require('./models/whatsapp-session');
+      const sessions = await WhatsappSession.getAll();
+      let restartedCount = 0;
+      for (const session of sessions) {
+        const sessionId = session.id.toString();
+        console.log(`[Auto-Restart] Mencoba inisialisasi WhatsApp client untuk session ${sessionId} (status: ${session.is_active ? 'active' : 'inactive'})`);
+        let success = false;
+        let lastError = null;
+        for (let attempt = 1; attempt <= 3; attempt++) {
+          try {
+            await new Promise(resolve => setTimeout(resolve, attempt > 1 ? 2000 : 0));
+            initWhatsappClient(sessionId);
+            success = true;
+            break;
+          } catch (err) {
+            lastError = err;
+            console.warn(`[Auto-Restart] Percobaan ${attempt} gagal untuk session ${sessionId}:`, err.message);
+          }
+        }
+        if (success) {
+          restartedCount++;
+        } else {
+          console.error(`[Auto-Restart] Gagal inisialisasi session ${sessionId} setelah 3x percobaan. Tandai sebagai inactive.`);
+          try {
+            await WhatsappSession.update(sessionId, { isActive: false });
+          } catch (dbErr) {
+            console.error(`[Auto-Restart] Error update status session ${sessionId}:`, dbErr);
+          }
+        }
+      }
+      console.log(`[Auto-Restart] ${restartedCount} WhatsApp session berhasil diinisialisasi pada server startup.`);
+    } catch (autoError) {
+      console.error('[Auto-Restart] Error initializing active sessions:', autoError);
+    }
+
     // Start server
     server.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);

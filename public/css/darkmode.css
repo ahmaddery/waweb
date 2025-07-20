@@ -1,0 +1,74 @@
+body.darkmode {
+  background-color: #181a1b !important;
+  color: #e8eaed !important;
+}
+
+.darkmode .card,
+.darkmode .navbar,
+.darkmode .modal-content,
+.darkmode .dropdown-menu {
+  background-color: #23272b !important;
+  color: #e8eaed !important;
+  border-color: #343a40 !important;
+}
+
+.darkmode .form-control,
+.darkmode .form-select {
+  background-color: #23272b !important;
+  color: #e8eaed !important;
+  border-color: #343a40 !important;
+}
+
+.darkmode .table {
+  color: #e8eaed !important;
+}
+
+.darkmode .bg-white,
+.darkmode .bg-light {
+  background-color: #23272b !important;
+  color: #e8eaed !important;
+}
+
+.darkmode .btn-light {
+  background-color: #343a40 !important;
+  color: #e8eaed !important;
+  border-color: #23272b !important;
+}
+
+.darkmode .btn-primary {
+  background-color: #3b82f6 !important;
+  border-color: #3b82f6 !important;
+}
+
+.darkmode .btn-danger {
+  background-color: #ef4444 !important;
+  border-color: #ef4444 !important;
+}
+
+.darkmode .badge.bg-success {
+  background-color: #22c55e !important;
+}
+
+.darkmode .badge.bg-secondary {
+  background-color: #64748b !important;
+}
+
+.darkmode .alert {
+  background-color: #23272b !important;
+  color: #e8eaed !important;
+  border-color: #343a40 !important;
+}
+
+.darkmode .dropdown-menu {
+  background-color: #23272b !important;
+  color: #e8eaed !important;
+}
+
+.darkmode .modal-header,
+.darkmode .modal-footer {
+  border-color: #343a40 !important;
+}
+
+.darkmode .table-hover tbody tr:hover {
+  background-color: #23272b !important;
+}

@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Debug - WAWeb</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-4">
+        <h1>QR Code Debug</h1>
+        
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Current Session Info</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="session-info">
+                            <p><strong>Session ID:</strong> <span id="current-session-id">None</span></p>
+                            <p><strong>Socket Connected:</strong> <span id="socket-status">Checking...</span></p>
+                            <p><strong>Last QR Event:</strong> <span id="last-qr-time">None</span></p>
+                            <p><strong>QR Events Count:</strong> <span id="qr-count">0</span></p>
+                        </div>
+                        
+                        <button class="btn btn-secondary" onclick="loadSessions()">Reload Sessions</button>
+                        <button class="btn btn-info" onclick="checkSocketConnection()">Check Socket</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>QR Code Display</h5>
+                    </div>
+                    <div class="card-body text-center">
+                        <div id="qrcode"></div>
+                        <p class="mt-2" id="qr-status">No QR code received</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Live Events Log</h5>
+                        <button class="btn btn-sm btn-secondary float-end" onclick="clearLog()">Clear</button>
+                    </div>
+                    <div class="card-body">
+                        <div id="events-log" style="height: 400px; overflow-y: scroll; background: #f8f9fa; padding: 10px; font-family: monospace; white-space: pre-wrap;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.0/build/qrcode.min.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        let qrEventCount = 0;
+        const socket = io();
+        
+        function log(message) {
+            const now = new Date().toLocaleTimeString();
+            const logElement = document.getElementById('events-log');
+            logElement.textContent += `[${now}] ${message}\n`;
+            logElement.scrollTop = logElement.scrollHeight;
+        }
+
+        function clearLog() {
+            document.getElementById('events-log').textContent = '';
+        }
+
+        function updateSessionInfo(sessionId) {
+            document.getElementById('current-session-id').textContent = sessionId || 'None';
+        }
+
+        function updateSocketStatus(connected) {
+            const statusEl = document.getElementById('socket-status');
+            statusEl.textContent = connected ? 'Connected' : 'Disconnected';
+            statusEl.className = connected ? 'text-success' : 'text-danger';
+        }
+
+        async function loadSessions() {
+            try {
+                log('Loading sessions...');
+                const response = await fetch('/api/sessions');
+                const data = await response.json();
+                
+                log(`Found ${data.sessions ? data.sessions.length : 0} sessions`);
+                
+                if (data.sessions && data.sessions.length > 0) {
+                    const activeSession = data.sessions.find(s => s.is_active) || data.sessions[0];
+                    if (activeSession) {
+                        window.currentSessionId = activeSession.id;
+                        updateSessionInfo(activeSession.id);
+                        log(`Using session ID: ${activeSession.id} (${activeSession.session_name})`);
+                        
+                        // Check status
+                        try {
+                            const statusRes = await fetch(`/api/whatsapp/session/${activeSession.id}/status`);
+                            const statusData = await statusRes.json();
+                            log(`Session status: ${JSON.stringify(statusData)}`);
+                        } catch (err) {
+                            log(`Error checking session status: ${err.message}`);
+                        }
+                    }
+                } else {
+                    log('No sessions found');
+                }
+            } catch (error) {
+                log(`Error loading sessions: ${error.message}`);
+            }
+        }
+
+        function checkSocketConnection() {
+            log(`Socket connected: ${socket.connected}`);
+            log(`Socket ID: ${socket.id}`);
+            updateSocketStatus(socket.connected);
+        }
+
+        // Socket events
+        socket.on('connect', () => {
+            log('✅ Socket connected');
+            updateSocketStatus(true);
+        });
+
+        socket.on('disconnect', () => {
+            log('❌ Socket disconnected');
+            updateSocketStatus(false);
+        });
+
+        socket.on('qr', (data) => {
+            qrEventCount++;
+            document.getElementById('qr-count').textContent = qrEventCount;
+            document.getElementById('last-qr-time').textContent = new Date().toLocaleTimeString();
+            
+            log(`🔄 QR event #${qrEventCount} received:`);
+            log(`  Session ID: ${data.sessionId}`);
+            log(`  Current Session: ${window.currentSessionId}`);
+            log(`  QR Length: ${data.qr ? data.qr.length : 'no data'}`);
+            log(`  Match: ${String(data.sessionId) === String(window.currentSessionId)}`);
+            
+            if (window.currentSessionId && String(data.sessionId) === String(window.currentSessionId)) {
+                log('📱 Displaying QR code...');
+                
+                const qrcodeElement = document.getElementById('qrcode');
+                qrcodeElement.innerHTML = '';
+                
+                try {
+                    const canvas = document.createElement('canvas');
+                    qrcodeElement.appendChild(canvas);
+                    
+                    QRCode.toCanvas(canvas, data.qr, { width: 200, margin: 2 }, function (error) {
+                        if (error) {
+                            log(`❌ QR generation error: ${error.message}`);
+                            document.getElementById('qr-status').textContent = 'QR generation failed';
+                        } else {
+                            log('✅ QR code generated successfully');
+                            document.getElementById('qr-status').textContent = 'QR code ready for scanning';
+                        }
+                    });
+                } catch (error) {
+                    log(`❌ QR display error: ${error.message}`);
+                }
+            } else {
+                log('⏭️ QR code not for current session, skipping');
+            }
+        });
+
+        socket.on('authenticated', (data) => {
+            log(`🔐 Authenticated event: ${JSON.stringify(data)}`);
+        });
+
+        socket.on('ready', (data) => {
+            log(`✅ Ready event: ${JSON.stringify(data)}`);
+            document.getElementById('qr-status').textContent = 'WhatsApp connected!';
+        });
+
+        socket.on('disconnected', (data) => {
+            log(`⚠️ Disconnected event: ${JSON.stringify(data)}`);
+        });
+
+        // Initial load
+        window.onload = function() {
+            log('Page loaded, initializing...');
+            checkSocketConnection();
+            loadSessions();
+        };
+    </script>
+</body>
+</html>

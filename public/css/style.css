@@ -14,6 +14,44 @@ body {
   min-height: 100vh;
 }
 
+/* QR Code Styles (mengikuti gaya dari waweb-referensi) */
+#qrcode-container {
+  min-height: 300px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  border: 2px dashed #dee2e6;
+  border-radius: 8px;
+  background-color: #f8f9fa;
+}
+
+#qrcode {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+#qrcode canvas,
+#qrcode img {
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.qr-instructions {
+  margin-top: 15px;
+  color: #6c757d;
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.session-status-badge {
+  margin-top: 10px;
+}
+
 /* Sidebar Styles */
 .sidebar {
   min-width: 250px;

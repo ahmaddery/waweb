@@ -216,7 +216,7 @@ async function handleStartSession(e) {
 }
 
 /**
- * Update the QR code display
+ * Update the QR code display (menggunakan sistem seperti waweb-referensi)
  * @param {string} qrData - The QR code data
  */
 function updateQRCode(qrData) {
@@ -226,20 +226,63 @@ function updateQRCode(qrData) {
     // Clear previous content
     qrContainer.innerHTML = '';
     
-    // Create QR code element
-    const qrElement = document.createElement('div');
-    qrElement.className = 'qr-code';
-    qrContainer.appendChild(qrElement);
+    // Create a canvas element first (mengikuti cara di referensi)
+    const canvas = document.createElement('canvas');
+    qrContainer.appendChild(canvas);
     
-    // Generate QR code
-    new QRCode(qrElement, {
-      text: qrData,
-      width: 256,
-      height: 256,
-      colorDark: '#000000',
-      colorLight: '#ffffff',
-      correctLevel: QRCode.CorrectLevel.H
-    });
+    // Generate QR code on the canvas using qrcode.js library (seperti di referensi)
+    if (typeof QRCode !== 'undefined' && QRCode.toCanvas) {
+      QRCode.toCanvas(canvas, qrData, { width: 250 }, function (error) {
+        if (error) {
+          console.error('Error generating QR code with canvas:', error);
+          
+          // Try alternative method using QRCode.toDataURL() as fallback
+          try {
+            QRCode.toDataURL(qrData, { width: 250 }, function (err, dataUrl) {
+              if (err) {
+                console.error('Error generating QR code with dataURL:', err);
+                qrContainer.innerHTML = '<p class="text-danger">Error generating QR code</p>';
+              } else {
+                // Create an image element and set the data URL
+                const img = document.createElement('img');
+                img.src = dataUrl;
+                img.alt = 'WhatsApp QR Code';
+                img.style.maxWidth = '100%';
+                qrContainer.innerHTML = '';
+                qrContainer.appendChild(img);
+              }
+            });
+          } catch (fallbackError) {
+            console.error('Fallback QR generation failed:', fallbackError);
+            qrContainer.innerHTML = '<p class="text-danger">Error generating QR code</p>';
+          }
+        }
+      });
+    } else {
+      // Fallback to original method if QRCode canvas method not available
+      console.log('QRCode.toCanvas not available, using fallback method');
+      const qrElement = document.createElement('div');
+      qrElement.className = 'qr-code';
+      qrContainer.appendChild(qrElement);
+      
+      // Generate QR code using qrcode.js or alternative library
+      if (typeof QRCode !== 'undefined' && QRCode.toDataURL) {
+        QRCode.toDataURL(qrData, { width: 250 }, function (err, dataUrl) {
+          if (!err) {
+            const img = document.createElement('img');
+            img.src = dataUrl;
+            img.alt = 'WhatsApp QR Code';
+            img.style.maxWidth = '100%';
+            qrContainer.innerHTML = '';
+            qrContainer.appendChild(img);
+          } else {
+            qrContainer.innerHTML = '<p class="text-danger">Error generating QR code</p>';
+          }
+        });
+      } else {
+        qrContainer.innerHTML = '<p class="text-danger">QR Code library not loaded</p>';
+      }
+    }
     
     // Add instructions
     const instructions = document.createElement('p');

@@ -299,6 +299,8 @@
           // Update buttons
           createSessionBtn.style.display = 'none';
           connectQrBtn.style.display = 'inline-block';
+          connectQrBtn.disabled = true;
+          connectQrBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Starting...';
           
           // Automatically start the WhatsApp session
           console.log('Starting WhatsApp session for ID:', currentSessionId);
@@ -313,9 +315,12 @@
             // Show QR code container
             qrcodeContainer.style.display = 'block';
             sessionStatus.textContent = 'Waiting for QR code...';
+            connectQrBtn.innerHTML = 'Waiting for QR...';
             console.log('QR container displayed, waiting for QR event...');
           } else {
             showError(startData.message || 'Failed to start WhatsApp session');
+            connectQrBtn.disabled = false;
+            connectQrBtn.innerHTML = 'Retry Connection';
           }
         } else {
           showError(data.message || 'Failed to create session');
@@ -341,6 +346,17 @@
         connectQrBtn.disabled = true;
         connectQrBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Connecting...';
         
+        // Check if session already exists first
+        const statusResponse = await fetch(`/api/whatsapp/session/${currentSessionId}/status`);
+        const statusData = await statusResponse.json();
+        
+        if (statusData.status === 'Connected') {
+          showSuccess('Session is already connected!');
+          connectQrBtn.disabled = false;
+          connectQrBtn.textContent = 'Already Connected';
+          return;
+        }
+        
         // Start the WhatsApp session
         const startResponse = await fetch(`/api/sessions/${currentSessionId}/start`, {
           method: 'POST'
@@ -355,16 +371,17 @@
           // Update status
           sessionStatus.className = 'alert alert-info';
           sessionStatus.textContent = 'Waiting for QR code...';
+          connectQrBtn.innerHTML = 'Waiting for QR...';
         } else {
           showError(startData.message || 'Failed to start WhatsApp session');
           connectQrBtn.disabled = false;
-          connectQrBtn.textContent = 'Connect via QR';
+          connectQrBtn.textContent = 'Retry Connection';
         }
       } catch (error) {
         console.error('Error connecting session:', error);
         showError('An error occurred while connecting the session');
         connectQrBtn.disabled = false;
-        connectQrBtn.textContent = 'Connect via QR';
+        connectQrBtn.textContent = 'Retry Connection';
       }
     });
     
@@ -408,6 +425,10 @@
       console.log('Current session ID:', currentSessionId);
       console.log('Received session ID:', data.sessionId);
       console.log('Session ID types:', typeof currentSessionId, typeof data.sessionId);
+      console.log('QR data length:', data.qr ? data.qr.length : 'no qr data');
+      
+      // Send confirmation back to server
+      socket.emit('qr_received_by_client', { sessionId: data.sessionId });
       
       // Check if this QR code is for our current session (convert both to strings for comparison)
       if (currentSessionId && String(data.sessionId) === String(currentSessionId)) {
@@ -420,31 +441,91 @@
         // Clear previous QR code
         qrcodeElement.innerHTML = '';
         
-        // Display QR code directly from server endpoint
-        const img = document.createElement('img');
-        img.src = `/api/whatsapp/session/${data.sessionId}/qr?t=${Date.now()}`;
-        img.style.maxWidth = '100%';
-        img.style.height = 'auto';
-        img.alt = 'WhatsApp QR Code';
-        
-        // Handle image load error
-        img.onerror = function() {
-          console.error('Error loading QR code image from server');
-          qrcodeElement.innerHTML = '<p class="text-danger">Error loading QR code. Please try again.</p>';
-        };
-        
-        // Handle image load success
-        img.onload = function() {
-          console.log('QR code image loaded successfully from server');
-        };
-        
-        qrcodeElement.appendChild(img);
+        // Try to generate QR code with better error handling
+        try {
+          console.log('Attempting to generate QR code with canvas...');
+          const canvas = document.createElement('canvas');
+          qrcodeElement.appendChild(canvas);
+          
+          // Generate QR code on the canvas
+          QRCode.toCanvas(canvas, data.qr, { width: 250, margin: 2 }, function (error) {
+            if (error) {
+              console.error('Error generating QR code with canvas:', error);
+              
+              // Remove failed canvas
+              if (canvas.parentNode) {
+                canvas.parentNode.removeChild(canvas);
+              }
+              
+              // Try alternative method using QRCode.toDataURL() as fallback
+              console.log('Trying fallback method with toDataURL...');
+              try {
+                QRCode.toDataURL(data.qr, { width: 250, margin: 2 }, function (err, dataUrl) {
+                  if (err) {
+                    console.error('Error generating QR code with dataURL:', err);
+                    qrcodeElement.innerHTML = `
+                      <div class="alert alert-danger">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        Error generating QR code. Please try again.
+                      </div>
+                    `;
+                  } else {
+                    console.log('QR code generated successfully with dataURL');
+                    // Create an image element and set the data URL
+                    const img = document.createElement('img');
+                    img.src = dataUrl;
+                    img.alt = 'WhatsApp QR Code';
+                    img.style.maxWidth = '100%';
+                    img.className = 'border rounded shadow-sm';
+                    qrcodeElement.innerHTML = '';
+                    qrcodeElement.appendChild(img);
+                    
+                    // Add instructions
+                    const instructions = document.createElement('p');
+                    instructions.className = 'mt-3 text-muted';
+                    instructions.textContent = 'Scan this QR code with WhatsApp on your phone';
+                    qrcodeElement.appendChild(instructions);
+                  }
+                });
+              } catch (fallbackError) {
+                console.error('Fallback QR generation failed:', fallbackError);
+                qrcodeElement.innerHTML = `
+                  <div class="alert alert-danger">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    QR Code library error. Please refresh the page and try again.
+                  </div>
+                `;
+              }
+            } else {
+              console.log('QR code generated successfully with canvas');
+              
+              // Add instructions
+              const instructions = document.createElement('p');
+              instructions.className = 'mt-3 text-muted';
+              instructions.textContent = 'Scan this QR code with WhatsApp on your phone';
+              qrcodeElement.appendChild(instructions);
+            }
+          });
+        } catch (error) {
+          console.error('Critical error in QR generation:', error);
+          qrcodeElement.innerHTML = `
+            <div class="alert alert-danger">
+              <i class="bi bi-exclamation-triangle"></i>
+              Critical error. Please refresh the page and try again.
+            </div>
+          `;
+        }
         
         // Update status
         sessionStatus.className = 'alert alert-warning';
         sessionStatus.textContent = 'Scan the QR code with your WhatsApp to connect';
       } else {
         console.log('QR code does not match current session or no current session');
+        if (!currentSessionId) {
+          console.log('No current session ID set');
+        } else {
+          console.log(`Session ID mismatch: current=${currentSessionId}, received=${data.sessionId}`);
+        }
       }
     });
     
@@ -452,8 +533,18 @@
       console.log('QR timeout event received:', data);
       if (currentSessionId && String(data.sessionId) === String(currentSessionId)) {
         sessionStatus.className = 'alert alert-warning';
-        sessionStatus.textContent = 'QR code generation timeout. Please try again.';
+        sessionStatus.innerHTML = `
+          <i class="bi bi-exclamation-triangle"></i>
+          QR code generation timeout. The WhatsApp client may need more time to initialize.
+          <button class="btn btn-sm btn-outline-warning ms-2" onclick="retryQRGeneration()">
+            <i class="bi bi-arrow-clockwise"></i> Retry
+          </button>
+        `;
         sessionStatus.style.display = 'block';
+        
+        // Re-enable connect button for manual retry
+        connectQrBtn.disabled = false;
+        connectQrBtn.textContent = 'Retry Connection';
       }
     });
     
@@ -585,6 +676,38 @@
         document.body.removeChild(toastContainer);
       });
     }
+    
+    // Retry QR generation function
+    window.retryQRGeneration = async function() {
+      if (!currentSessionId) {
+        showError('No session ID available for retry');
+        return;
+      }
+      
+      try {
+        console.log('Retrying QR generation for session:', currentSessionId);
+        sessionStatus.className = 'alert alert-info';
+        sessionStatus.textContent = 'Retrying WhatsApp connection...';
+        
+        // First try to restart the session
+        const restartResponse = await fetch(`/api/sessions/${currentSessionId}/restart`, {
+          method: 'POST'
+        });
+        
+        const restartData = await restartResponse.json();
+        
+        if (restartResponse.ok) {
+          console.log('Session restart successful, waiting for QR...');
+          sessionStatus.textContent = 'Session restarted, waiting for QR code...';
+        } else {
+          console.error('Session restart failed:', restartData);
+          showError(restartData.message || 'Failed to restart session');
+        }
+      } catch (error) {
+        console.error('Error retrying QR generation:', error);
+        showError('An error occurred while retrying');
+      }
+    };
   });
 </script>
 

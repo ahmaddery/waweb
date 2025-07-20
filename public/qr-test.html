@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Code Test</title>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.0/build/qrcode.min.js"></script>
+</head>
+<body>
+    <h1>QR Code Library Test</h1>
+    <div id="qr-test-container">
+        <p>Testing QR code generation...</p>
+    </div>
+    
+    <script>
+        // Test QR code generation
+        const testQR = "test:QRCodeGeneration:123456789";
+        const container = document.getElementById('qr-test-container');
+        
+        console.log('Testing QR code generation with sample data...');
+        
+        // Try canvas method
+        const canvas = document.createElement('canvas');
+        container.appendChild(canvas);
+        
+        QRCode.toCanvas(canvas, testQR, { width: 250 }, function (error) {
+            if (error) {
+                console.error('Canvas method failed:', error);
+                container.innerHTML = '<p style="color: red;">Canvas method failed</p>';
+                
+                // Try fallback
+                QRCode.toDataURL(testQR, { width: 250 }, function (err, url) {
+                    if (err) {
+                        console.error('DataURL method also failed:', err);
+                        container.innerHTML += '<p style="color: red;">DataURL method also failed</p>';
+                    } else {
+                        console.log('DataURL method successful');
+                        const img = document.createElement('img');
+                        img.src = url;
+                        container.appendChild(img);
+                        container.innerHTML += '<p style="color: green;">DataURL method successful</p>';
+                    }
+                });
+            } else {
+                console.log('Canvas method successful');
+                container.innerHTML = '<p style="color: green;">Canvas method successful</p>';
+                container.appendChild(canvas);
+            }
+        });
+    </script>
+</body>
+</html>

@@ -13,6 +13,9 @@
   
   <!-- Custom CSS -->
   <link rel="stylesheet" href="/css/style.css">
+
+  <!-- Darkmode CSS -->
+  <link rel="stylesheet" href="/css/darkmode.css">
   
   <!-- jQuery -->
   <script src="https://code.jquery.com/jquery-3.6.3.min.js"></script>
@@ -27,6 +30,60 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
+  <script>
+    // Dark mode system & user preference
+    function setDarkMode(enabled, save = true) {
+      if (enabled) {
+        document.body.classList.add('darkmode');
+        if (save) localStorage.setItem('darkmode', '1');
+      } else {
+        document.body.classList.remove('darkmode');
+        if (save) localStorage.setItem('darkmode', '0');
+      }
+      updateDarkModeToggle();
+    }
+
+    function getSystemPrefersDark() {
+      return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    }
+
+    function updateDarkModeToggle() {
+      var btn = document.getElementById('toggle-darkmode');
+      if (!btn) return;
+      var isDark = document.body.classList.contains('darkmode');
+      btn.innerHTML = isDark ? '<i class="bi bi-brightness-high"></i> Light Mode' : '<i class="bi bi-moon"></i> Dark Mode';
+    }
+
+    function applyInitialDarkMode() {
+      var pref = localStorage.getItem('darkmode');
+      if (pref === '1') {
+        setDarkMode(true, false);
+      } else if (pref === '0') {
+        setDarkMode(false, false);
+      } else {
+        setDarkMode(getSystemPrefersDark(), false);
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+      applyInitialDarkMode();
+      var btn = document.getElementById('toggle-darkmode');
+      if (btn) {
+        btn.addEventListener('click', function() {
+          var isDark = document.body.classList.contains('darkmode');
+          setDarkMode(!isDark);
+        });
+      }
+      // Listen to system preference changes
+      if (window.matchMedia) {
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(e) {
+          if (localStorage.getItem('darkmode') === null) {
+            setDarkMode(e.matches, false);
+          }
+        });
+      }
+    });
+  </script>
   <div class="wrapper">
     <!-- Sidebar -->
     <%- include('./sidebar') %>
@@ -39,7 +96,10 @@
           <button type="button" id="sidebarCollapse" class="btn btn-light">
             <i class="bi bi-list"></i>
           </button>
-          
+          <!-- Dark/Light mode toggle -->
+          <button id="toggle-darkmode" class="btn btn-outline-secondary ms-2" title="Toggle Dark/Light Mode">
+            <i class="bi bi-moon"></i> Dark Mode
+          </button>
           <div class="ms-auto d-flex align-items-center">
             <% if (user) { %>
               <div class="dropdown">

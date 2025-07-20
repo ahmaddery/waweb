@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WhatsApp Session Test</title>
+    <script src="/socket.io/socket.io.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .log { background: #f5f5f5; padding: 10px; margin: 10px 0; border-radius: 5px; font-family: monospace; white-space: pre-wrap; }
+        button { padding: 10px 20px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        button:disabled { background: #ccc; cursor: not-allowed; }
+        .status { padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .warning { background: #fff3cd; color: #856404; }
+        .info { background: #d1ecf1; color: #0c5460; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>WhatsApp Session Debug Tool</h1>
+        
+        <div>
+            <input type="text" id="sessionName" placeholder="Session Name" value="test-session">
+            <button onclick="createSession()">Create Session</button>
+            <button onclick="startSession()" id="startBtn" disabled>Start Session</button>
+            <button onclick="checkStatus()" id="statusBtn" disabled>Check Status</button>
+            <button onclick="clearLogs()">Clear Logs</button>
+        </div>
+        
+        <div id="status" class="status info">Ready to test</div>
+        
+        <h3>Logs:</h3>
+        <div id="logs" class="log">Waiting for actions...</div>
+    </div>
+
+    <script>
+        const socket = io();
+        let currentSessionId = null;
+        let logs = [];
+        
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            logs.push(`[${timestamp}] ${message}`);
+            document.getElementById('logs').textContent = logs.join('\n');
+            
+            // Update status
+            const statusEl = document.getElementById('status');
+            statusEl.textContent = message;
+            statusEl.className = `status ${type}`;
+            
+            console.log(`[DEBUG] ${message}`);
+        }
+        
+        async function createSession() {
+            const sessionName = document.getElementById('sessionName').value;
+            if (!sessionName) {
+                log('Please enter a session name', 'error');
+                return;
+            }
+            
+            try {
+                log('Creating session...', 'info');
+                const response = await fetch('/api/sessions', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: sessionName })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    currentSessionId = data.sessionId;
+                    log(`Session created successfully! ID: ${currentSessionId}`, 'success');
+                    document.getElementById('startBtn').disabled = false;
+                    document.getElementById('statusBtn').disabled = false;
+                } else {
+                    log(`Failed to create session: ${data.message}`, 'error');
+                }
+            } catch (error) {
+                log(`Error creating session: ${error.message}`, 'error');
+            }
+        }
+        
+        async function startSession() {
+            if (!currentSessionId) {
+                log('No session ID available', 'error');
+                return;
+            }
+            
+            try {
+                log(`Starting session ${currentSessionId}...`, 'info');
+                const response = await fetch(`/api/sessions/${currentSessionId}/start`, {
+                    method: 'POST'
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    log(`Session start response: ${JSON.stringify(data)}`, 'success');
+                } else {
+                    log(`Failed to start session: ${data.message || data.error}`, 'error');
+                }
+            } catch (error) {
+                log(`Error starting session: ${error.message}`, 'error');
+            }
+        }
+        
+        async function checkStatus() {
+            if (!currentSessionId) {
+                log('No session ID available', 'error');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/whatsapp/session/${currentSessionId}/status`);
+                const data = await response.json();
+                log(`Session status: ${JSON.stringify(data)}`, 'info');
+            } catch (error) {
+                log(`Error checking status: ${error.message}`, 'error');
+            }
+        }
+        
+        function clearLogs() {
+            logs = [];
+            document.getElementById('logs').textContent = 'Logs cleared...';
+        }
+        
+        // Socket event listeners
+        socket.on('connect', () => {
+            log('Socket.io connected', 'success');
+        });
+        
+        socket.on('disconnect', () => {
+            log('Socket.io disconnected', 'warning');
+        });
+        
+        socket.on('qr', (data) => {
+            log(`QR code received for session ${data.sessionId} (length: ${data.qr ? data.qr.length : 'no data'})`, 'success');
+        });
+        
+        socket.on('ready', (data) => {
+            log(`WhatsApp ready for session ${data.sessionId}`, 'success');
+        });
+        
+        socket.on('disconnected', (data) => {
+            log(`WhatsApp disconnected for session ${data.sessionId}`, 'warning');
+        });
+        
+        socket.on('auth_failure', (data) => {
+            log(`Auth failure for session ${data.sessionId}: ${data.error}`, 'error');
+        });
+        
+        socket.on('qr_timeout', (data) => {
+            log(`QR timeout for session ${data.sessionId}: ${data.message}`, 'warning');
+        });
+        
+        socket.on('init_error', (data) => {
+            log(`Init error for session ${data.sessionId}: ${data.error}`, 'error');
+        });
+    </script>
+</body>
+</html>

@@ -90,7 +90,8 @@
   </div>
 </div>
 
-<!-- Webhook Configuration Card -->
+
+<!-- Webhook Configuration Card 
 <div class="row">
   <div class="col-12 mb-4">
     <div class="card">
@@ -110,6 +111,7 @@
     </div>
   </div>
 </div>
+-->
 
 <!-- Session Name Modal -->
 <div class="modal fade" id="session-name-modal" tabindex="-1" aria-hidden="true">
@@ -136,6 +138,9 @@
   </div>
 </div>
 
+<!-- Toast Container -->
+<div class="toast-container position-fixed top-0 end-0 p-3" id="toast-container"></div>
+
 <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.0/build/qrcode.min.js"></script>
 <script src="/socket.io/socket.io.js"></script>
 <script>
@@ -159,15 +164,53 @@
     const sessionNameInput = document.getElementById('session-name');
     const confirmSessionBtn = document.getElementById('confirm-session-btn');
     
-    // Load webhook URL
+    // Load webhook URL (use global endpoint for dashboard overview)
     fetch('/api/webhook')
       .then(response => response.json())
       .then(data => {
+        console.log('[INFO] Loaded webhook data:', data);
         if (data.url) {
           webhookUrlInput.value = data.url;
+          console.log('[SUCCESS] Webhook URL loaded:', data.url);
+        } else {
+          console.log('[INFO] No webhook URL found');
         }
       })
-      .catch(error => console.error('Error loading webhook URL:', error));
+      .catch(error => {
+        console.error('[ERROR] Error loading webhook URL:', error);
+        // If global webhook fails, we can show a message that session-specific webhooks are recommended
+      });
+
+    // Check for existing active sessions on load
+    fetch('/api/sessions')
+      .then(response => response.json())
+      .then(data => {
+        console.log('Existing sessions:', data);
+        if (data.sessions && data.sessions.length > 0) {
+          // Find the first active session or the most recent one
+          const activeSession = data.sessions.find(s => s.is_active) || data.sessions[0];
+          if (activeSession) {
+            window.currentSessionId = activeSession.id;
+            console.log('Dashboard using existing session ID:', window.currentSessionId);
+            
+            // Check session status
+            fetch(`/api/whatsapp/session/${activeSession.id}/status`)
+              .then(res => res.json())
+              .then(statusData => {
+                console.log('Session status:', statusData);
+                if (statusData.connected) {
+                  updateStatus('Connected');
+                } else {
+                  updateStatus('Disconnected');
+                }
+              })
+              .catch(err => console.error('Error checking session status:', err));
+          }
+        }
+      })
+      .catch(error => {
+        console.error('Error loading sessions:', error);
+      });
     
     // Update status function
     function updateStatus(status) {
@@ -187,34 +230,85 @@
     
     // Socket.io event listeners
     socket.on('qr', (data) => {
+      console.log('Dashboard QR event received:', data);
+      console.log('Current session ID:', window.currentSessionId);
+      console.log('Received session ID:', data.sessionId);
+      
       // Check if this QR code is for our current session
-      if (window.currentSessionId && data.sessionId === window.currentSessionId) {
+      if (window.currentSessionId && String(data.sessionId) === String(window.currentSessionId)) {
+        console.log('QR code matches current session, displaying...');
+        
         // Clear previous QR code
         qrcodeElement.innerHTML = '';
         qrInstructions.style.display = 'block';
         
-        // Display QR code directly from server endpoint
-        const img = document.createElement('img');
-        img.src = `/api/whatsapp/session/${data.sessionId}/qr?t=${Date.now()}`;
-        img.style.maxWidth = '100%';
-        img.style.height = 'auto';
-        img.alt = 'WhatsApp QR Code';
-        
-        // Handle image load error
-        img.onerror = function() {
-          console.error('Error loading QR code image from server');
-          qrcodeElement.innerHTML = '<p class="text-danger">Error loading QR code. Please try again.</p>';
-        };
-        
-        // Handle image load success
-        img.onload = function() {
-          console.log('QR code image loaded successfully from server');
-        };
-        
-        qrcodeElement.appendChild(img);
-        
-        updateStatus('Pending');
-        connectionStatus.className = 'badge bg-warning';
+        // Try to generate QR code with canvas (same method as sessions page)
+        try {
+          console.log('Attempting to generate QR code with canvas...');
+          const canvas = document.createElement('canvas');
+          qrcodeElement.appendChild(canvas);
+          
+          // Generate QR code on the canvas
+          QRCode.toCanvas(canvas, data.qr, { width: 250, margin: 2 }, function (error) {
+            if (error) {
+              console.error('Error generating QR code with canvas:', error);
+              
+              // Remove failed canvas
+              if (canvas.parentNode) {
+                canvas.parentNode.removeChild(canvas);
+              }
+              
+              // Try alternative method using QRCode.toDataURL() as fallback
+              console.log('Trying fallback method with toDataURL...');
+              try {
+                QRCode.toDataURL(data.qr, { width: 250, margin: 2 }, function (err, dataUrl) {
+                  if (err) {
+                    console.error('Error generating QR code with dataURL:', err);
+                    qrcodeElement.innerHTML = `
+                      <div class="alert alert-danger">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        Error generating QR code. Please try again.
+                      </div>
+                    `;
+                  } else {
+                    console.log('QR code generated successfully with dataURL method');
+                    const img = document.createElement('img');
+                    img.src = dataUrl;
+                    img.style.maxWidth = '100%';
+                    img.style.height = 'auto';
+                    img.alt = 'WhatsApp QR Code';
+                    qrcodeElement.appendChild(img);
+                    
+                    updateStatus('Pending');
+                    connectionStatus.className = 'badge bg-warning';
+                  }
+                });
+              } catch (fallbackError) {
+                console.error('Fallback QR generation failed:', fallbackError);
+                qrcodeElement.innerHTML = `
+                  <div class="alert alert-danger">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    Failed to generate QR code. Please refresh and try again.
+                  </div>
+                `;
+              }
+            } else {
+              console.log('QR code generated successfully with canvas method');
+              updateStatus('Pending');
+              connectionStatus.className = 'badge bg-warning';
+            }
+          });
+        } catch (error) {
+          console.error('QR code generation error:', error);
+          qrcodeElement.innerHTML = `
+            <div class="alert alert-danger">
+              <i class="bi bi-exclamation-triangle"></i>
+              QR code generation failed. Please try again.
+            </div>
+          `;
+        }
+      } else {
+        console.log('QR code not for current session, ignoring');
       }
     });
     
@@ -289,6 +383,7 @@
         if (response.ok) {
           // Store the session ID for socket events
           window.currentSessionId = createData.sessionId;
+          console.log('Dashboard session ID set to:', window.currentSessionId);
           
           sessionNameModal.hide();
           showSuccess('Session started successfully! Waiting for QR code...');
@@ -355,9 +450,23 @@
       
       const webhookUrl = webhookUrlInput.value.trim();
       
+      // Gentle validation dengan toast instead of annoying alert
+      if (!webhookUrl) {
+        showError('Mohon masukkan URL webhook terlebih dahulu 😊');
+        webhookUrlInput.focus();
+        return;
+      }
+
+      // Basic URL validation (lebih ramah)
+      if (!webhookUrl.startsWith('http://') && !webhookUrl.startsWith('https://')) {
+        showError('URL webhook harus dimulai dengan http:// atau https:// 🌐');
+        webhookUrlInput.focus();
+        return;
+      }
+
       try {
         saveWebhookBtn.disabled = true;
-        saveWebhookBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Saving...';
+        saveWebhookBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Menyimpan...';
         
         const response = await fetch('/api/webhook', {
           method: 'POST',
@@ -370,13 +479,15 @@
         const data = await response.json();
         
         if (response.ok) {
-          showSuccess(data.message);
+          showSuccess('🎉 Webhook URL berhasil disimpan!');
+          console.log('[SUCCESS] Webhook URL saved:', webhookUrl);
         } else {
-          showError(data.message || 'Failed to save webhook URL');
+          showError('❌ ' + (data.error || data.message || 'Gagal menyimpan webhook URL'));
+          console.error('[ERROR] Failed to save webhook:', data);
         }
       } catch (error) {
-        console.error('Error saving webhook URL:', error);
-        showError('An error occurred while saving the webhook URL');
+        console.error('[ERROR] Error saving webhook URL:', error);
+        showError('😅 Ups! Terjadi kesalahan saat menyimpan webhook. Coba lagi ya!');
       } finally {
         saveWebhookBtn.disabled = false;
         saveWebhookBtn.textContent = 'Save Webhook';
@@ -386,53 +497,59 @@
     // Helper functions for showing messages
     function showSuccess(message, element) {
       const toast = document.createElement('div');
-      toast.className = 'toast align-items-center text-white bg-success border-0';
+      toast.className = 'toast align-items-center text-white bg-success border-0 shadow';
       toast.setAttribute('role', 'alert');
       toast.setAttribute('aria-live', 'assertive');
       toast.setAttribute('aria-atomic', 'true');
       
       toast.innerHTML = `
         <div class="d-flex">
-          <div class="toast-body">
+          <div class="toast-body fw-bold">
             ${message}
           </div>
           <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
         </div>
       `;
       
-      document.body.appendChild(toast);
-      const bsToast = new bootstrap.Toast(toast, { delay: 5000 });
+      const container = document.getElementById('toast-container') || document.body;
+      container.appendChild(toast);
+      const bsToast = new bootstrap.Toast(toast, { delay: 4000 });
       bsToast.show();
       
       // Remove the element when hidden
       toast.addEventListener('hidden.bs.toast', function () {
-        document.body.removeChild(toast);
+        if (toast.parentElement) {
+          toast.parentElement.removeChild(toast);
+        }
       });
     }
     
     function showError(message, element) {
       const toast = document.createElement('div');
-      toast.className = 'toast align-items-center text-white bg-danger border-0';
+      toast.className = 'toast align-items-center text-white bg-danger border-0 shadow';
       toast.setAttribute('role', 'alert');
       toast.setAttribute('aria-live', 'assertive');
       toast.setAttribute('aria-atomic', 'true');
       
       toast.innerHTML = `
         <div class="d-flex">
-          <div class="toast-body">
+          <div class="toast-body fw-bold">
             ${message}
           </div>
           <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
         </div>
       `;
       
-      document.body.appendChild(toast);
+      const container = document.getElementById('toast-container') || document.body;
+      container.appendChild(toast);
       const bsToast = new bootstrap.Toast(toast, { delay: 5000 });
       bsToast.show();
       
       // Remove the element when hidden
       toast.addEventListener('hidden.bs.toast', function () {
-        document.body.removeChild(toast);
+        if (toast.parentElement) {
+          toast.parentElement.removeChild(toast);
+        }
       });
     }
   });
